@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>出演許諾 証票作成</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#1a1d24; --line:#2a2f3a; --txt:#eef1f6; --sub:#9aa3b2;
+    --accent:#3b82f6; --accent2:#2563eb; --ok:#22c55e; --seal:#d4263b; --danger:#ef4444;
+    --r:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.6; overscroll-behavior:none;}
+  .app{max-width:560px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column;}
+  header{position:sticky; top:0; z-index:5; background:rgba(15,17,21,.92);
+    backdrop-filter:blur(8px); padding:14px 16px calc(14px + env(safe-area-inset-top)); border-bottom:1px solid var(--line);}
+  .title{font-size:16px; font-weight:700; letter-spacing:.02em;}
+  .steps{display:flex; gap:6px; margin-top:10px;}
+  .steps .dot{flex:1; height:4px; border-radius:99px; background:var(--line);}
+  .steps .dot.on{background:var(--accent);}
+  main{flex:1; padding:18px 16px calc(120px + env(safe-area-inset-bottom));}
+  .screen{display:none; animation:fade .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  h2{font-size:20px; margin:0 0 4px;}
+  .hint{color:var(--sub); font-size:13px; margin:0 0 16px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:16px;}
+
+  /* consent scroll box */
+  .doc{height:46vh; overflow:auto; border:1px solid var(--line); border-radius:12px;
+    padding:16px; background:#12151c; font-size:14px; -webkit-overflow-scrolling:touch;}
+  .doc h3{margin:0 0 8px; font-size:15px;}
+  .doc p{margin:0 0 12px; color:#d7dce6;}
+  .doc .end{margin-top:18px; padding-top:12px; border-top:1px dashed var(--line); color:var(--sub); font-size:12px; text-align:center;}
+  .scrollnote{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--sub); margin:10px 2px;}
+  .scrollnote.done{color:var(--ok);}
+
+  .seg{display:flex; gap:8px; margin:14px 0;}
+  .seg button{flex:1; padding:14px; border-radius:12px; border:1px solid var(--line);
+    background:#12151c; color:var(--txt); font-size:15px; font-weight:600;}
+  .seg button.sel{border-color:var(--accent); background:rgba(59,130,246,.14);}
+
+  label.field{display:block; margin:14px 0 6px; font-size:13px; color:var(--sub);}
+  input[type=text]{width:100%; padding:14px; font-size:16px; border-radius:12px;
+    border:1px solid var(--line); background:#12151c; color:var(--txt);}
+  input[type=text]:focus{outline:none; border-color:var(--accent);}
+
+  .chk{display:flex; gap:12px; align-items:flex-start; margin-top:16px; padding:14px;
+    border:1px solid var(--line); border-radius:12px; background:#12151c; opacity:.5; pointer-events:none;}
+  .chk.enabled{opacity:1; pointer-events:auto; border-color:var(--accent);}
+  .chk input{width:24px; height:24px; margin-top:1px; accent-color:var(--accent);}
+  .chk span{font-size:14px;}
+
+  /* camera */
+  .videowrap{position:relative; border-radius:14px; overflow:hidden; background:#000; aspect-ratio:3/4;}
+  video,canvas.preview{width:100%; height:100%; object-fit:cover; display:block;}
+  .cambtns{display:flex; gap:10px; margin-top:12px;}
+  .stamp-on-photo{position:absolute; left:8px; right:8px; bottom:8px; font-size:11px;
+    color:#fff; text-shadow:0 1px 2px #000; background:rgba(0,0,0,.35); padding:6px 8px; border-radius:8px;
+    font-variant-numeric:tabular-nums;}
+
+  /* signature */
+  .sigwrap{position:relative; border:1px solid var(--line); border-radius:14px; background:#fff; touch-action:none; overflow:hidden;}
+  canvas.sig{width:100%; height:230px; display:block; touch-action:none;}
+  .sigph{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:#b7bdc8; font-size:15px; pointer-events:none;}
+
+  /* buttons */
+  .bar{position:fixed; left:0; right:0; bottom:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, var(--bg) 70%, transparent); display:flex; gap:10px; max-width:560px; margin:0 auto;}
+  .btn{flex:1; padding:16px; border:none; border-radius:14px; font-size:16px; font-weight:700; color:#fff; background:var(--accent2);}
+  .btn:disabled{background:#33384400; background:#2a2f3a; color:#6b7280;}
+  .btn.ghost{background:transparent; border:1px solid var(--line); color:var(--txt); flex:0 0 auto; padding:16px 18px;}
+  .btn.ok{background:var(--ok);}
+  .small{font-size:13px; padding:10px 14px; flex:0 0 auto; border-radius:10px;}
+
+  /* result */
+  .result img{width:100%; border-radius:14px; border:1px solid var(--line); display:block;}
+  .meta{font-size:12px; color:var(--sub); margin-top:12px; word-break:break-all;}
+  .toast{position:fixed; left:50%; bottom:96px; transform:translateX(-50%); background:#000; color:#fff;
+    padding:10px 16px; border-radius:99px; font-size:13px; opacity:0; transition:.3s; z-index:50; pointer-events:none;}
+  .toast.show{opacity:.95;}
+  .warn{background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:#fecaca;
+    border-radius:12px; padding:10px 12px; font-size:12px; margin-top:12px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="title">出演許諾 証票作成</div>
+    <div class="steps" id="steps">
+      <div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. 確認 -->
+    <section class="screen active" id="s1">
+      <h2>① 同意内容の確認</h2>
+      <p class="hint">最後までスクロールすると同意できます。</p>
+      <div class="doc" id="doc">
+        <!-- ▼▼▼ ここの文面は弁護士確認のうえ自由に編集してください ▼▼▼ -->
+        <h3>YouTube等への出演・公開に関する同意書</h3>
+        <p>私は、撮影者（以下「運営者」）が運営するYouTubeチャンネルおよび関連する動画コンテンツへの出演について、以下の内容を理解し、同意します。</p>
+        <p><b>1. 撮影内容の利用</b><br>本日撮影される私の映像・写真・音声（以下「本コンテンツ」）が、YouTubeをはじめとする動画・SNS・ウェブサイト等で公開・配信されることに同意します。</p>
+        <p><b>2. 肖像権・パブリシティ権</b><br>本コンテンツに関する肖像権・パブリシティ権を運営者が利用することを許諾し、公開に関して肖像権等を理由とする差止・損害賠償等の請求を行いません。</p>
+        <p><b>3. 編集・二次利用</b><br>運営者が本コンテンツを編集・加工し、切り抜き・サムネイル・広告・宣伝素材等に二次利用することに同意します。</p>
+        <p><b>4. 期間・地域</b><br>本同意は期間・地域の定めなく有効とし、公開後の削除義務を運営者は負わないことを理解します。</p>
+        <p><b>5. 無償</b><br>本コンテンツの利用について、原則として対価の支払いがないことを理解し、これに同意します。</p>
+        <p><b>6. 個人情報</b><br>本証票に記録される氏名・署名・撮影日時・位置情報が、出演同意の証跡としてのみ保管・利用されることに同意します。</p>
+        <p><b>7. 撤回について</b><br>公開前であれば撤回を申し出ることができますが、公開後の拡散済みコンテンツについては技術的に削除できない場合があることを理解します。</p>
+        <p>私は上記すべてを一読し、内容を理解したうえで、自らの意思で出演を許諾します。</p>
+        <!-- ▲▲▲ 文面ここまで ▲▲▲ -->
+        <div class="end" id="docEnd">― 以上を確認しました ―</div>
+      </div>
+      <div class="scrollnote" id="scrollnote">⬇ 最後までスクロールしてください</div>
+
+      <div class="card" style="margin-top:8px">
+        <div style="font-size:13px; color:var(--sub); margin-bottom:8px">出演者の区分</div>
+        <div class="seg" id="ageSeg">
+          <button data-age="adult">本人（18歳以上）</button>
+          <button data-age="minor">18歳未満</button>
+        </div>
+      </div>
+
+      <div class="chk" id="chkWrap">
+        <input type="checkbox" id="agree">
+        <span>上記の同意書を最後まで読み、内容を理解したうえで出演を許諾します。</span>
+      </div>
+    </section>
+
+    <!-- 2. 氏名 -->
+    <section class="screen" id="s2">
+      <h2>② 氏名の入力</h2>
+      <p class="hint">出演者ご本人のお名前を入力してください。</p>
+      <div class="card">
+        <label class="field">出演者氏名</label>
+        <input type="text" id="name" placeholder="例）山田 太郎" autocomplete="off">
+        <div id="guardianBlock" style="display:none">
+          <label class="field">保護者氏名（18歳未満のため必須）</label>
+          <input type="text" id="guardian" placeholder="例）山田 花子" autocomplete="off">
+          <label class="field">続柄</label>
+          <input type="text" id="relation" placeholder="例）母" autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 撮影 -->
+    <section class="screen" id="s3">
+      <h2>③ 撮影</h2>
+      <p class="hint">出演者を撮影します。日時・位置情報が写真に焼き込まれます。</p>
+      <div class="videowrap" id="videowrap">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas class="preview" id="photoPreview" style="display:none"></canvas>
+        <div class="stamp-on-photo" id="liveStamp"></div>
+      </div>
+      <div class="warn" id="camWarn" style="display:none"></div>
+      <div class="cambtns">
+        <button class="btn ghost" id="switchCam">⟲ カメラ切替</button>
+        <button class="btn" id="shoot">撮影する</button>
+        <button class="btn ghost" id="retake" style="display:none">撮り直し</button>
+      </div>
+    </section>
+
+    <!-- 4. 署名 -->
+    <section class="screen" id="s4">
+      <h2>④ 署名</h2>
+      <p class="hint">枠内に指でサインしてください。</p>
+      <div class="sigwrap">
+        <canvas class="sig" id="sig"></canvas>
+        <div class="sigph" id="sigph">ここに署名</div>
+      </div>
+      <div class="cambtns">
+        <button class="btn ghost" id="sigClear">消去</button>
+      </div>
+    </section>
+
+    <!-- 5. 完了 -->
+    <section class="screen" id="s5">
+      <h2>⑤ 完了</h2>
+      <p class="hint">証票が生成されました。保存・共有してください。</p>
+      <div class="result">
+        <img id="resultImg" alt="証票">
+        <div class="meta" id="resultMeta"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="bar" id="bar">
+    <button class="btn ghost" id="backBtn" style="display:none">戻る</button>
+    <button class="btn" id="nextBtn" disabled>次へ</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const state = {
+  step: 1,
+  age: null,            // 'adult' | 'minor'
+  scrolledEnd: false,
+  name: "", guardian: "", relation: "",
+  photo: null,          // dataURL (watermarked)
+  signature: null,      // dataURL
+  when: null, geo: null,
+  id: null
+};
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2200); }
+
+/* ---------- step navigation ---------- */
+const screens = ["s1","s2","s3","s4","s5"];
+function show(step){
+  state.step = step;
+  screens.forEach((id,i)=> $("#"+id).classList.toggle("active", i===step-1));
+  document.querySelectorAll("#steps .dot").forEach((d,i)=> d.classList.toggle("on", i<=step-1));
+  $("#backBtn").style.display = step>1 && step<5 ? "block" : "none";
+  $("#bar").style.display = step===5 ? "none" : "flex";
+  window.scrollTo(0,0);
+  refreshNext();
+  if(step===3) startCamera();
+  if(step!==3) stopCamera();
+  if(step===4) setTimeout(initSig,50);
+  if(step===5) buildCertificate();
+}
+function refreshNext(){
+  const b=$("#nextBtn"); let ok=false; let label="次へ";
+  if(state.step===1) ok = state.scrolledEnd && $("#agree").checked && !!state.age;
+  if(state.step===2){ ok = !!$("#name").value.trim() && (state.age!=="minor" || !!$("#guardian").value.trim()); }
+  if(state.step===3) ok = !!state.photo;
+  if(state.step===4){ ok = !!state.signature; label="証票を作成"; }
+  b.disabled = !ok; b.textContent = label;
+}
+
+$("#nextBtn").onclick = ()=>{
+  if(state.step===2){ state.name=$("#name").value.trim(); state.guardian=$("#guardian").value.trim();
+    state.relation=$("#relation").value.trim(); }
+  if(state.step<5) show(state.step+1);
+};
+$("#backBtn").onclick = ()=> show(Math.max(1,state.step-1));
+
+/* ---------- step 1: scroll + age + agree ---------- */
+const doc=$("#doc");
+doc.addEventListener("scroll", ()=>{
+  if(doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 8){
+    if(!state.scrolledEnd){
+      state.scrolledEnd=true;
+      $("#scrollnote").textContent="✓ 最後まで確認しました";
+      $("#scrollnote").classList.add("done");
+      $("#chkWrap").classList.add("enabled");
+    }
+  }
+});
+$("#ageSeg").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  state.age=b.dataset.age;
+  document.querySelectorAll("#ageSeg button").forEach(x=>x.classList.toggle("sel",x===b));
+  $("#guardianBlock").style.display = state.age==="minor" ? "block":"none";
+  refreshNext();
+});
+$("#agree").addEventListener("change", refreshNext);
+["#name","#guardian","#relation"].forEach(s=> $(s).addEventListener("input", refreshNext));
+
+/* ---------- geolocation + time ---------- */
+function captureContext(){
+  state.when = new Date();
+  state.id = "CONSENT-" + state.when.getFullYear()
+    + pad(state.when.getMonth()+1) + pad(state.when.getDate()) + "-"
+    + Math.random().toString(36).slice(2,7).toUpperCase();
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      p=>{ state.geo={lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy, address:null};
+           updateLiveStamp(); reverseGeocode(p.coords.latitude, p.coords.longitude); },
+      ()=>{ state.geo={error:true}; updateLiveStamp(); },
+      {enableHighAccuracy:true, timeout:8000, maximumAge:60000}
+    );
+  } else { state.geo={error:true}; }
+}
+function reverseGeocode(lat,lng){
+  const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja&zoom=18`;
+  fetch(url,{headers:{"Accept":"application/json"}})
+    .then(r=>r.ok?r.json():Promise.reject())
+    .then(d=>{
+      const a=d.address||{};
+      const parts=[
+        a.province||a.state,
+        a.city||a.county||a.town||a.village||a.municipality,
+        a.suburb||a.city_district||a.ward,
+        a.neighbourhood||a.quarter||a.hamlet,
+        a.road, a.house_number
+      ].filter(Boolean);
+      let addr = parts.join("");
+      if(!addr) addr = d.display_name || "";
+      if(addr && state.geo && !state.geo.error){ state.geo.address=addr; updateLiveStamp(); }
+    })
+    .catch(()=>{ /* 住所変換失敗時は座標のみ */ });
+}
+const pad=n=>String(n).padStart(2,"0");
+function fmtTime(d){ return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
+function fmtGeo(g){ if(!g) return "位置情報 取得中…"; if(g.error) return "位置情報 取得不可";
+  if(g.address) return g.address;
+  return `緯度 ${g.lat.toFixed(6)} / 経度 ${g.lng.toFixed(6)}`; }
+function fmtCoords(g){ if(!g||g.error||g.lat==null) return ""; return `緯度 ${g.lat.toFixed(6)} / 経度 ${g.lng.toFixed(6)}（±${Math.round(g.acc)}m）`; }
+function updateLiveStamp(){
+  if(!state.when) return;
+  $("#liveStamp").innerHTML = `${fmtTime(state.when)}<br>${fmtGeo(state.geo)}`;
+}
+
+/* ---------- step 3: camera ---------- */
+let stream=null, facing="environment";
+async function startCamera(){
+  captureContext(); updateLiveStamp();
+  $("#camWarn").style.display="none";
+  $("#photoPreview").style.display="none"; $("#video").style.display="block";
+  $("#shoot").style.display="block"; $("#retake").style.display="none"; $("#switchCam").style.display="block";
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:facing}, audio:false});
+    $("#video").srcObject = stream;
+  }catch(err){
+    $("#camWarn").style.display="block";
+    $("#camWarn").innerHTML = "カメラを起動できません（"+err.name+"）。<br>HTTPS環境で開き、カメラ権限を許可してください。";
+  }
+}
+function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+$("#switchCam").onclick = ()=>{ facing = facing==="environment"?"user":"environment"; stopCamera(); startCamera(); };
+
+$("#shoot").onclick = ()=>{
+  const v=$("#video"); if(!v.videoWidth){ toast("カメラ準備中です"); return; }
+  state.when = new Date(); updateLiveStamp();           // 撮影時刻で確定
+  const c=$("#photoPreview"); const W=v.videoWidth, H=v.videoHeight;
+  c.width=W; c.height=H; const x=c.getContext("2d");
+  x.drawImage(v,0,0,W,H);
+  burnWatermark(x,W,H);                                  // 可視透かし焼き込み
+  state.photo = c.toDataURL("image/jpeg",0.92);
+  v.style.display="none"; c.style.display="block";
+  $("#shoot").style.display="none"; $("#switchCam").style.display="none"; $("#retake").style.display="block";
+  refreshNext();
+};
+$("#retake").onclick = ()=>{ state.photo=null; startCamera(); refreshNext(); };
+
+function burnWatermark(ctx,W,H){
+  const fs = Math.max(18, Math.round(W*0.032));
+  const lines = [ fmtTime(state.when), fmtGeo(state.geo) ];
+  const co = fmtCoords(state.geo); if(co) lines.push(co);
+  lines.push(state.id);
+  ctx.font = `600 ${fs}px -apple-system, "Hiragino Sans", sans-serif`;
+  ctx.textBaseline="top";
+  const pad=fs*0.7, lh=fs*1.35;
+  const boxH = lh*lines.length + pad*1.2;
+  // semi-transparent band
+  ctx.fillStyle="rgba(0,0,0,0.42)";
+  ctx.fillRect(0, H-boxH, W, boxH);
+  // text with subtle shadow for legibility
+  ctx.fillStyle="#fff";
+  ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=4;
+  lines.forEach((t,i)=> ctx.fillText(t, pad, H-boxH+pad*0.6 + i*lh));
+  ctx.shadowBlur=0;
+}
+
+/* ---------- step 4: signature ---------- */
+let sigCtx, drawing=false, sigDirty=false;
+function initSig(){
+  const c=$("#sig"); const rect=c.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  c.width=rect.width*dpr; c.height=rect.height*dpr;
+  sigCtx=c.getContext("2d"); sigCtx.scale(dpr,dpr);
+  sigCtx.lineWidth=3; sigCtx.lineCap="round"; sigCtx.lineJoin="round"; sigCtx.strokeStyle="#111";
+  sigCtx.clearRect(0,0,c.width,c.height);
+  sigDirty=false; $("#sigph").style.display="flex";
+}
+function sigPos(e){ const r=$("#sig").getBoundingClientRect();
+  const p=e.touches?e.touches[0]:e; return {x:p.clientX-r.left, y:p.clientY-r.top}; }
+function sigStart(e){ e.preventDefault(); drawing=true; const p=sigPos(e);
+  sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y);
+  if(!sigDirty){ sigDirty=true; $("#sigph").style.display="none"; } }
+function sigMove(e){ if(!drawing) return; e.preventDefault(); const p=sigPos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); }
+function sigEnd(){ if(!drawing) return; drawing=false; if(sigDirty){ state.signature=$("#sig").toDataURL("image/png"); refreshNext(); } }
+(()=>{ const c=$("#sig");
+  c.addEventListener("touchstart",sigStart,{passive:false});
+  c.addEventListener("touchmove",sigMove,{passive:false});
+  c.addEventListener("touchend",sigEnd);
+  c.addEventListener("mousedown",sigStart); c.addEventListener("mousemove",sigMove);
+  window.addEventListener("mouseup",sigEnd);
+})();
+$("#sigClear").onclick = ()=>{ initSig(); state.signature=null; refreshNext(); };
+
+/* ---------- step 5: build certificate PNG ---------- */
+async function buildCertificate(){
+  const W=1080, pad=48;
+  const photoImg = await loadImg(state.photo);
+  const sigImg = await loadImg(state.signature);
+  // layout heights
+  const photoW = W-pad*2;
+  const photoH = Math.round(photoW * (photoImg.height/photoImg.width));
+  const sigH = 220;
+  let H = 0;
+  const headerH=190, ctxH=180, sealArea=0;
+  H = pad + headerH + ctxH + photoH + 60 + sigH + 130 + pad;
+
+  const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
+  const x=cv.getContext("2d");
+  // bg
+  x.fillStyle="#ffffff"; x.fillRect(0,0,W,H);
+  x.fillStyle="#0f1115"; x.fillRect(0,0,W,12);
+
+  let y=pad;
+  // header
+  x.fillStyle="#0f1115"; x.textBaseline="top";
+  x.font="700 44px -apple-system,'Hiragino Sans',sans-serif";
+  x.fillText("出演許諾 証票", pad, y); y+=64;
+  x.font="400 24px -apple-system,'Hiragino Sans',sans-serif"; x.fillStyle="#555";
+  x.fillText("YouTube等への出演・公開に関する同意の記録", pad, y); y+=44;
+  x.strokeStyle="#e2e5ea"; x.lineWidth=2; x.beginPath(); x.moveTo(pad,y); x.lineTo(W-pad,y); x.stroke(); y+=30;
+
+  // context block
+  x.font="400 26px -apple-system,'Hiragino Sans',sans-serif"; x.fillStyle="#222";
+  const ageTxt = state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）";
+  const rows = [
+    ["区分", ageTxt],
+    ["出演者氏名", state.name || "―"],
+  ];
+  if(state.age==="minor") rows.push(["保護者氏名", (state.guardian||"―") + (state.relation?`（${state.relation}）`:"")]);
+  rows.push(["撮影日時", fmtTime(state.when)]);
+  rows.push(["撮影場所", fmtGeo(state.geo)]);
+  const coRow=fmtCoords(state.geo); if(coRow) rows.push(["座標", coRow]);
+  rows.push(["証票ID", state.id]);
+  rows.forEach(r=>{
+    x.fillStyle="#888"; x.font="400 22px -apple-system,'Hiragino Sans',sans-serif";
+    x.fillText(r[0], pad, y);
+    x.fillStyle="#111"; x.font="600 24px -apple-system,'Hiragino Sans',sans-serif";
+    x.fillText(r[1], pad+200, y);
+    y+=40;
+  });
+  y+=14;
+
+  // photo
+  x.drawImage(photoImg, pad, y, photoW, photoH);
+  x.strokeStyle="#d7dce6"; x.lineWidth=2; x.strokeRect(pad,y,photoW,photoH);
+  y+=photoH+40;
+
+  // signature label + image
+  x.fillStyle="#888"; x.font="400 22px -apple-system,'Hiragino Sans',sans-serif";
+  x.fillText("署名", pad, y); y+=8;
+  const sigW = Math.min(W-pad*2, sigH*(sigImg.width/sigImg.height));
+  // white box for signature
+  x.fillStyle="#fff"; x.strokeStyle="#d7dce6"; x.lineWidth=2;
+  x.fillRect(pad,y,W-pad*2,sigH); x.strokeRect(pad,y,W-pad*2,sigH);
+  x.drawImage(sigImg, pad+20, y+10, sigW-40>0?sigW-40:sigW, sigH-20);
+  y+=sigH+30;
+
+  // 朱印 seal (同意済)
+  drawSeal(x, W-pad-150, y+10, 150, "同意済");
+
+  // footer note
+  x.fillStyle="#999"; x.font="400 18px -apple-system,'Hiragino Sans',sans-serif";
+  x.fillText("本証票は出演同意の証跡として生成されました。", pad, y+40);
+
+  const dataURL = cv.toDataURL("image/png");
+  state.cert = dataURL;
+  $("#resultImg").src = dataURL;
+  $("#resultMeta").innerHTML = `証票ID: ${state.id}<br>${fmtTime(state.when)}<br>${fmtGeo(state.geo)}`;
+  renderResultButtons();
+}
+
+function drawSeal(ctx,cx,cy,r,text){
+  ctx.save();
+  ctx.translate(cx+r/2, cy+r/2);
+  ctx.rotate(-0.12);
+  ctx.strokeStyle="#d4263b"; ctx.lineWidth=6;
+  ctx.beginPath(); ctx.arc(0,0,r/2,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,r/2-12,0,Math.PI*2); ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#d4263b"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.font="700 44px 'Hiragino Mincho ProN','Hiragino Sans',serif";
+  // vertical-ish 2x2
+  ctx.font="700 40px 'Hiragino Mincho ProN','Hiragino Sans',serif";
+  ctx.fillText("同意", 0, -22); ctx.fillText("済", 0, 24);
+  ctx.restore();
+}
+
+function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
+
+/* ---------- result: share / save / new ---------- */
+function renderResultButtons(){
+  const main=$("#s5 .result");
+  let box=$("#resultBtns");
+  if(!box){ box=document.createElement("div"); box.id="resultBtns"; box.className="cambtns"; box.style.marginTop="16px"; main.appendChild(box); }
+  box.innerHTML="";
+  const shareBtn=document.createElement("button"); shareBtn.className="btn ok"; shareBtn.textContent="共有 / 保存";
+  shareBtn.onclick=shareCert;
+  const dlBtn=document.createElement("button"); dlBtn.className="btn ghost"; dlBtn.textContent="ダウンロード";
+  dlBtn.onclick=downloadCert;
+  box.appendChild(shareBtn); box.appendChild(dlBtn);
+  const newBox=document.createElement("div"); newBox.className="cambtns"; newBox.style.marginTop="10px";
+  const nb=document.createElement("button"); nb.className="btn"; nb.textContent="次の出演者を登録";
+  nb.onclick=resetAll; newBox.appendChild(nb); main.appendChild(newBox);
+}
+function certFile(){
+  const bin=atob(state.cert.split(",")[1]); const arr=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+  return new File([arr], `${state.id}.png`, {type:"image/png"});
+}
+async function shareCert(){
+  const file=certFile();
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:"出演許諾 証票", text:state.id}); }
+    catch(e){ /* cancelled */ }
+  } else { downloadCert(); toast("共有非対応のため保存しました"); }
+}
+function downloadCert(){
+  const a=document.createElement("a"); a.href=state.cert; a.download=`${state.id}.png`;
+  document.body.appendChild(a); a.click(); a.remove(); toast("画像を保存しました");
+}
+function resetAll(){
+  Object.assign(state,{step:1,age:null,scrolledEnd:false,name:"",guardian:"",relation:"",
+    photo:null,signature:null,when:null,geo:null,id:null,cert:null});
+  $("#agree").checked=false; $("#name").value=""; $("#guardian").value=""; $("#relation").value="";
+  document.querySelectorAll("#ageSeg button").forEach(x=>x.classList.remove("sel"));
+  $("#guardianBlock").style.display="none";
+  $("#chkWrap").classList.remove("enabled");
+  $("#scrollnote").textContent="⬇ 最後までスクロールしてください"; $("#scrollnote").classList.remove("done");
+  doc.scrollTop=0;
+  const rb=$("#resultBtns"); if(rb) rb.remove();
+  document.querySelectorAll("#s5 .cambtns").forEach(b=>{ if(b.id!=="resultBtns") b.remove(); });
+  show(1);
+}
+</script>
+</body>
+</html>
