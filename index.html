@@ -44,9 +44,28 @@
   .seg button.sel{border-color:var(--accent); background:rgba(59,130,246,.14);}
 
   label.field{display:block; margin:14px 0 6px; font-size:13px; color:var(--sub);}
-  input[type=text]{width:100%; padding:14px; font-size:16px; border-radius:12px;
+  input[type=text],input[type=email],input[type=url]{width:100%; padding:14px; font-size:16px; border-radius:12px;
     border:1px solid var(--line); background:#12151c; color:var(--txt);}
-  input[type=text]:focus{outline:none; border-color:var(--accent);}
+  input[type=text]:focus,input[type=email]:focus,input[type=url]:focus{outline:none; border-color:var(--accent);}
+  input.invalid{border-color:var(--danger);}
+  .fieldnote{font-size:11px; color:var(--sub); margin:6px 2px 0;}
+
+  /* admin settings */
+  details.admin{margin-top:16px; border:1px solid var(--line); border-radius:12px; background:#12151c; padding:0 14px;}
+  details.admin summary{cursor:pointer; padding:12px 0; font-size:13px; color:var(--sub); list-style:none; display:flex; justify-content:space-between; align-items:center;}
+  details.admin summary::-webkit-details-marker{display:none;}
+  details.admin summary::after{content:"▾"; color:var(--sub); transition:transform .2s;}
+  details.admin[open] summary::after{transform:rotate(180deg);}
+  details.admin[open]{padding-bottom:14px;}
+  .savebtn{margin-top:10px; padding:12px 16px; border:none; border-radius:10px; background:var(--accent2); color:#fff; font-weight:700; font-size:14px;}
+
+  /* mail status */
+  .mailstat{margin-top:14px; padding:12px 14px; border-radius:12px; font-size:14px; border:1px solid var(--line); background:#12151c; color:var(--sub); display:flex; align-items:center; gap:10px;}
+  .mailstat.send{border-color:var(--accent); color:#bcd3ff;}
+  .mailstat.ok{border-color:var(--ok); color:#bbf7d0; background:rgba(34,197,94,.10);}
+  .mailstat.err{border-color:var(--danger); color:#fecaca; background:rgba(239,68,68,.10);}
+  .spin{width:14px; height:14px; border:2px solid currentColor; border-right-color:transparent; border-radius:50%; animation:sp .7s linear infinite; flex:0 0 auto;}
+  @keyframes sp{to{transform:rotate(360deg);}}
 
   .chk{display:flex; gap:12px; align-items:flex-start; margin-top:16px; padding:14px;
     border:1px solid var(--line); border-radius:12px; background:#12151c; opacity:.5; pointer-events:none;}
@@ -110,7 +129,7 @@
         <p><b>3. 編集・二次利用</b><br>運営者が本コンテンツを編集・加工し、切り抜き・サムネイル・広告・宣伝素材等に二次利用することに同意します。</p>
         <p><b>4. 期間・地域</b><br>本同意は期間・地域の定めなく有効とし、公開後の削除義務を運営者は負わないことを理解します。</p>
         <p><b>5. 無償</b><br>本コンテンツの利用について、原則として対価の支払いがないことを理解し、これに同意します。</p>
-        <p><b>6. 個人情報</b><br>本証票に記録される氏名・署名・撮影日時・位置情報が、出演同意の証跡としてのみ保管・利用されることに同意します。</p>
+        <p><b>6. 個人情報・控えの送付</b><br>本証票に記録される氏名・署名・撮影日時・位置情報・メールアドレスが、出演同意の証跡としてのみ保管・利用されることに同意します。ご連絡先を入力された場合、証票の控えがメールで送付されます。</p>
         <p><b>7. 撤回について</b><br>公開前であれば撤回を申し出ることができますが、公開後の拡散済みコンテンツについては技術的に削除できない場合があることを理解します。</p>
         <p>私は上記すべてを一読し、内容を理解したうえで、自らの意思で出演を許諾します。</p>
         <!-- ▲▲▲ 文面ここまで ▲▲▲ -->
@@ -130,20 +149,34 @@
         <input type="checkbox" id="agree">
         <span>上記の同意書を最後まで読み、内容を理解したうえで出演を許諾します。</span>
       </div>
+
+      <details class="admin">
+        <summary>⚙ メール送信の設定（管理者のみ）</summary>
+        <label class="field">Apps Script のウェブアプリURL（/exec）</label>
+        <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+        <p class="fieldnote">このスマホにのみ保存されます。設定すると完了時に証票が自動でメール送信されます。空欄なら送信は行いません。</p>
+        <button class="savebtn" id="saveEndpoint">保存</button>
+        <span id="endpointSaved" style="font-size:12px; color:var(--ok); margin-left:10px;"></span>
+      </details>
     </section>
 
     <!-- 2. 氏名 -->
     <section class="screen" id="s2">
-      <h2>② 氏名の入力</h2>
+      <h2>② 氏名・連絡先の入力</h2>
       <p class="hint">出演者ご本人のお名前を入力してください。</p>
       <div class="card">
         <label class="field">出演者氏名</label>
         <input type="text" id="name" placeholder="例）山田 太郎" autocomplete="off">
+        <label class="field">メールアドレス（証票の控えを送付・任意）</label>
+        <input type="email" id="email" placeholder="例）taro@example.com" autocomplete="off" inputmode="email">
+        <p class="fieldnote">入力すると、完了時に出演者ご本人にも証票の控えメールが届きます。</p>
         <div id="guardianBlock" style="display:none">
           <label class="field">保護者氏名（18歳未満のため必須）</label>
           <input type="text" id="guardian" placeholder="例）山田 花子" autocomplete="off">
           <label class="field">続柄</label>
           <input type="text" id="relation" placeholder="例）母" autocomplete="off">
+          <label class="field">保護者メールアドレス（任意）</label>
+          <input type="email" id="guardianEmail" placeholder="例）hanako@example.com" autocomplete="off" inputmode="email">
         </div>
       </div>
     </section>
@@ -184,6 +217,7 @@
       <p class="hint">証票が生成されました。保存・共有してください。</p>
       <div class="result">
         <img id="resultImg" alt="証票">
+        <div class="mailstat" id="mailStat" style="display:none"></div>
         <div class="meta" id="resultMeta"></div>
       </div>
     </section>
@@ -199,15 +233,26 @@
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
+
+/* ===== メール送信の設定 ===== */
+// 既定のApps Script URL（空の場合は端末の設定 or 未送信）。運用で固定したい場合はここに /exec URL を記入。
+const MAIL_ENDPOINT_DEFAULT = "";
+// フロントとApps Scriptで一致させる合言葉（乱用防止）。Apps Script側のSHARED_TOKENと必ず同じ値にすること。
+const MAIL_TOKEN = "yt-consent-883d0d5e9919fec7c85d0217";
+function mailEndpoint(){ return (localStorage.getItem("mailEndpoint") || MAIL_ENDPOINT_DEFAULT || "").trim(); }
+const isEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s||"").trim());
+
 const state = {
   step: 1,
   age: null,            // 'adult' | 'minor'
   scrolledEnd: false,
   name: "", guardian: "", relation: "",
+  email: "", guardianEmail: "",
   photo: null,          // dataURL (watermarked)
   signature: null,      // dataURL
   when: null, geo: null,
-  id: null
+  id: null,
+  cert: null, mailed: false
 };
 
 /* ---------- toast ---------- */
@@ -233,7 +278,12 @@ function show(step){
 function refreshNext(){
   const b=$("#nextBtn"); let ok=false; let label="次へ";
   if(state.step===1) ok = state.scrolledEnd && $("#agree").checked && !!state.age;
-  if(state.step===2){ ok = !!$("#name").value.trim() && (state.age!=="minor" || !!$("#guardian").value.trim()); }
+  if(state.step===2){
+    const emOk = v => v==="" || isEmail(v);   // 任意入力だが、入れるなら正しい形式のみ
+    ok = !!$("#name").value.trim()
+      && (state.age!=="minor" || !!$("#guardian").value.trim())
+      && emOk($("#email").value.trim()) && emOk($("#guardianEmail").value.trim());
+  }
   if(state.step===3) ok = !!state.photo;
   if(state.step===4){ ok = !!state.signature; label="証票を作成"; }
   b.disabled = !ok; b.textContent = label;
@@ -241,7 +291,8 @@ function refreshNext(){
 
 $("#nextBtn").onclick = ()=>{
   if(state.step===2){ state.name=$("#name").value.trim(); state.guardian=$("#guardian").value.trim();
-    state.relation=$("#relation").value.trim(); }
+    state.relation=$("#relation").value.trim();
+    state.email=$("#email").value.trim(); state.guardianEmail=$("#guardianEmail").value.trim(); }
   if(state.step<5) show(state.step+1);
 };
 $("#backBtn").onclick = ()=> show(Math.max(1,state.step-1));
@@ -267,6 +318,32 @@ $("#ageSeg").addEventListener("click", e=>{
 });
 $("#agree").addEventListener("change", refreshNext);
 ["#name","#guardian","#relation"].forEach(s=> $(s).addEventListener("input", refreshNext));
+// メール欄：形式が不正なときだけ枠を赤く（未入力は任意なのでOK）
+["#email","#guardianEmail"].forEach(s=> $(s).addEventListener("input", e=>{
+  const v=e.target.value.trim();
+  e.target.classList.toggle("invalid", v!=="" && !isEmail(v));
+  refreshNext();
+}));
+
+/* ---------- admin: mail endpoint ---------- */
+(function initEndpoint(){
+  const saved = localStorage.getItem("mailEndpoint") || "";
+  if(saved) $("#endpointInput").value = saved;
+  // 未設定の端末では設定パネルを開いて気づけるようにする
+  if(!saved && !MAIL_ENDPOINT_DEFAULT) document.querySelector("details.admin").open = true;
+  $("#saveEndpoint").onclick = ()=>{
+    const v = $("#endpointInput").value.trim();
+    // 消費者アカウント: /macros/s/.../exec ／ Workspace: /a/macros/DOMAIN/s/.../exec の両方を許容
+    if(v && !/^https:\/\/script\.google\.com\/(a\/macros\/[^/]+|macros)\/s\/[^/]+\/exec$/.test(v)){
+      $("#endpointSaved").style.color="var(--danger)";
+      $("#endpointSaved").textContent="URLの形式が違います（…/exec）";
+      return;
+    }
+    if(v) localStorage.setItem("mailEndpoint", v); else localStorage.removeItem("mailEndpoint");
+    $("#endpointSaved").style.color="var(--ok)";
+    $("#endpointSaved").textContent = v ? "保存しました" : "設定を解除しました";
+  };
+})();
 
 /* ---------- geolocation + time ---------- */
 function captureContext(){
@@ -316,6 +393,7 @@ function updateLiveStamp(){
 /* ---------- step 3: camera ---------- */
 let stream=null, facing="environment";
 async function startCamera(){
+  state.photo=null;                 // 撮影ステップに入る/戻るたびに撮り直しを強制（ID・日時と焼き込みの不整合を防止）
   captureContext(); updateLiveStamp();
   $("#camWarn").style.display="none";
   $("#photoPreview").style.display="none"; $("#video").style.display="block";
@@ -467,6 +545,7 @@ async function buildCertificate(){
   $("#resultImg").src = dataURL;
   $("#resultMeta").innerHTML = `証票ID: ${state.id}<br>${fmtTime(state.when)}<br>${fmtGeo(state.geo)}`;
   renderResultButtons();
+  maybeAutoSend();
 }
 
 function drawSeal(ctx,cx,cy,r,text){
@@ -486,20 +565,109 @@ function drawSeal(ctx,cx,cy,r,text){
 
 function loadImg(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
 
-/* ---------- result: share / save / new ---------- */
+/* ---------- result: mail / share / save / new ---------- */
 function renderResultButtons(){
   const main=$("#s5 .result");
   let box=$("#resultBtns");
   if(!box){ box=document.createElement("div"); box.id="resultBtns"; box.className="cambtns"; box.style.marginTop="16px"; main.appendChild(box); }
   box.innerHTML="";
-  const shareBtn=document.createElement("button"); shareBtn.className="btn ok"; shareBtn.textContent="共有 / 保存";
+  const mailBtn=document.createElement("button"); mailBtn.id="mailBtn"; mailBtn.className="btn ok";
+  mailBtn.textContent = state.mailed ? "メールを再送" : "メールで送信";
+  mailBtn.onclick=()=>sendMail(true);
+  const shareBtn=document.createElement("button"); shareBtn.className="btn ghost"; shareBtn.textContent="共有";
   shareBtn.onclick=shareCert;
-  const dlBtn=document.createElement("button"); dlBtn.className="btn ghost"; dlBtn.textContent="ダウンロード";
+  box.appendChild(mailBtn); box.appendChild(shareBtn);
+  let box2=$("#resultBtns2");
+  if(!box2){ box2=document.createElement("div"); box2.className="cambtns"; box2.style.marginTop="10px"; box2.id="resultBtns2"; main.appendChild(box2); }
+  box2.innerHTML="";
+  const dlBtn=document.createElement("button"); dlBtn.className="btn ghost"; dlBtn.textContent="ダウンロード保存";
   dlBtn.onclick=downloadCert;
-  box.appendChild(shareBtn); box.appendChild(dlBtn);
-  const newBox=document.createElement("div"); newBox.className="cambtns"; newBox.style.marginTop="10px";
   const nb=document.createElement("button"); nb.className="btn"; nb.textContent="次の出演者を登録";
-  nb.onclick=resetAll; newBox.appendChild(nb); main.appendChild(newBox);
+  nb.onclick=resetAll;
+  box2.appendChild(dlBtn); box2.appendChild(nb);
+}
+
+/* ---------- email the certificate ---------- */
+function setMailStat(kind,msg,spin){
+  const el=$("#mailStat"); el.style.display="flex"; el.className="mailstat "+(kind||"");
+  el.innerHTML = (spin?'<span class="spin"></span>':"") + '<span></span>';
+  el.querySelector("span:last-child").textContent = msg;
+}
+function maybeAutoSend(){
+  if(!mailEndpoint()){
+    setMailStat("", "メール送信は未設定です（①画面の「⚙ メール送信の設定」でURLを登録すると自動送信されます）。");
+    return;
+  }
+  sendMail(false);
+}
+const MAIL_ERR = {
+  unauthorized:"認証エラー（合言葉が一致しません。Apps Script側のSHARED_TOKENを確認）",
+  no_image:"画像データがありません",
+  no_body:"送信データが空です",
+  busy:"混み合っています。少し待って再送してください",
+  daily_limit:"本日の送信上限に達しました（明日再度お試しください）",
+  quota_exceeded:"Gmailの本日の送信上限に達しました"
+};
+async function sendMail(manual){
+  const url=mailEndpoint();
+  if(!url){ setMailStat("err","メール送信先が未設定です。①画面の「⚙ メール送信の設定」を開いてURLを登録してください。"); return; }
+  if(!state.cert){ setMailStat("err","証票がまだ生成されていません。"); return; }
+  const btn=$("#mailBtn"); if(btn) btn.disabled=true;
+  setMailStat("send","メールを送信しています…", true);
+  const payload = {
+    token: MAIL_TOKEN,
+    imageBase64: state.cert,
+    id: state.id,
+    performerName: state.name,
+    guardianName: state.guardian,
+    guardianRelation: state.relation,
+    ageKind: state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）",
+    when: fmtTime(state.when),
+    place: fmtGeo(state.geo),
+    coords: fmtCoords(state.geo),
+    signerEmail: isEmail(state.email) ? state.email : "",
+    guardianEmail: isEmail(state.guardianEmail) ? state.guardianEmail : ""
+  };
+  // 出演者がメールを入力したのに形式不正で送信対象外になった場合の注意書き
+  const dropped=[];
+  if(state.email && !isEmail(state.email)) dropped.push("出演者本人");
+  if(state.guardianEmail && !isEmail(state.guardianEmail)) dropped.push("保護者");
+  const droppedNote = dropped.length ? "（※"+dropped.join("・")+"のメールは形式不正のため送信対象外）" : "";
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 30000);   // 30秒でタイムアウト（無限スピナー防止）
+  const reenable = (label)=>{ if(btn){ btn.disabled=false; if(label) btn.textContent=label; } };
+  try{
+    const res = await fetch(url, {
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},  // プリフライト回避のためtext/plain
+      body: JSON.stringify(payload),
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    let data=null; try{ data=await res.json(); }catch(_){}
+    if(data && data.ok){
+      state.mailed=true;
+      const to=(data.sentTo||[]).join("、");
+      const dd = data.dedup ? "（既に送信済みのため重複送信を防止しました）" : "";
+      setMailStat("ok","✓ 送信しました"+(to?"（宛先: "+to+"）":"")+dd+droppedNote);
+      reenable("メールを再送");
+    }else if(data && data.error){
+      setMailStat("err","✗ 送信できませんでした（"+(MAIL_ERR[data.error]||data.error)+"）。");
+      reenable(state.mailed?"メールを再送":"メールで送信");
+    }else{
+      // 通信は成立したが応答本文を読めない（クロスオリジン制約など）。
+      // バックエンドは証票ID単位で冪等なので、再送しても重複しない。
+      state.mailed=true;
+      setMailStat("ok","送信を受け付けました"+droppedNote+"。運営者の控えメールが届いているかご確認ください。もう一度押しても重複送信は自動で防止されます。");
+      reenable("念のため再送");
+    }
+  }catch(err){
+    clearTimeout(timer);
+    const kind = (err && err.name==="AbortError") ? "タイムアウト" : "通信エラー";
+    setMailStat("err","△ 応答を確認できませんでした（"+kind+"）。送信されている可能性があります。控えを確認し、届いていなければ「メールを再送」してください（重複は自動で防止されます）。");
+    reenable("メールを再送");
+  }
 }
 function certFile(){
   const bin=atob(state.cert.split(",")[1]); const arr=new Uint8Array(bin.length);
@@ -519,15 +687,18 @@ function downloadCert(){
 }
 function resetAll(){
   Object.assign(state,{step:1,age:null,scrolledEnd:false,name:"",guardian:"",relation:"",
-    photo:null,signature:null,when:null,geo:null,id:null,cert:null});
+    email:"",guardianEmail:"",photo:null,signature:null,when:null,geo:null,id:null,cert:null,mailed:false});
   $("#agree").checked=false; $("#name").value=""; $("#guardian").value=""; $("#relation").value="";
+  $("#email").value=""; $("#guardianEmail").value="";
+  $("#email").classList.remove("invalid"); $("#guardianEmail").classList.remove("invalid");
   document.querySelectorAll("#ageSeg button").forEach(x=>x.classList.remove("sel"));
   $("#guardianBlock").style.display="none";
   $("#chkWrap").classList.remove("enabled");
   $("#scrollnote").textContent="⬇ 最後までスクロールしてください"; $("#scrollnote").classList.remove("done");
   doc.scrollTop=0;
+  $("#mailStat").style.display="none"; $("#mailStat").className="mailstat";
   const rb=$("#resultBtns"); if(rb) rb.remove();
-  document.querySelectorAll("#s5 .cambtns").forEach(b=>{ if(b.id!=="resultBtns") b.remove(); });
+  const rb2=$("#resultBtns2"); if(rb2) rb2.remove();
   show(1);
 }
 </script>
