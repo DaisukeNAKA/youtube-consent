@@ -264,6 +264,7 @@ function show(step){
   $("#bar").style.display = step===5 ? "none" : "flex";
   window.scrollTo(0,0);
   refreshNext();
+  if(step===1) setTimeout(checkDocEnd,50);   // 内容が枠内に収まる場合も同意可能にする
   if(step===3) startCamera();
   if(step!==3) stopCamera();
   if(step===4) setTimeout(initSig,50);
@@ -287,16 +288,22 @@ $("#backBtn").onclick = ()=> show(Math.max(1,state.step-1));
 
 /* ---------- step 1: scroll + age + agree ---------- */
 const doc=$("#doc");
-doc.addEventListener("scroll", ()=>{
-  if(doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 8){
-    if(!state.scrolledEnd){
-      state.scrolledEnd=true;
-      $("#scrollnote").textContent="✓ 最後まで確認しました";
-      $("#scrollnote").classList.add("done");
-      $("#chkWrap").classList.add("enabled");
-    }
-  }
-});
+function markScrolledEnd(){
+  if(state.scrolledEnd) return;
+  state.scrolledEnd=true;
+  $("#scrollnote").textContent="✓ 最後まで確認しました";
+  $("#scrollnote").classList.add("done");
+  $("#chkWrap").classList.add("enabled");
+  refreshNext();
+}
+function checkDocEnd(){
+  // 末尾までスクロール済み、または内容が枠内に収まりスクロール不要なら解放
+  if(doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 8) markScrolledEnd();
+}
+doc.addEventListener("scroll", checkDocEnd);
+window.addEventListener("resize", ()=>{ if(state.step===1) checkDocEnd(); });
+window.addEventListener("load", ()=> setTimeout(checkDocEnd,100));   // 初期表示時：スクロール不要なら即解放
+setTimeout(checkDocEnd,300);                                          // フォント確定後の保険
 $("#ageSeg").addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   state.age=b.dataset.age;
