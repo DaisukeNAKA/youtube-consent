@@ -53,7 +53,7 @@ function doPost(e) {
 
     // (2) 冪等化: 同じ証票IDは二重送信しない
     if (id && props.getProperty("sent_" + id)) {
-      return json({ ok: true, status: "already_sent", message: "operator copy already sent" });
+      return json({ ok: true, status: "already_sent", message: "operator copy already sent", owner: maskEmail(OWNER_EMAIL) });
     }
 
     // (5) 画像（dataURL）の形式検証 → base64本体を取り出す
@@ -120,7 +120,7 @@ function doPost(e) {
     props.setProperty(countKey, String(used + 1));
     if (id) props.setProperty("sent_" + id, JSON.stringify({ at: new Date().toISOString() }));
 
-    return json({ ok: true, status: "sent", message: "operator copy sent" });
+    return json({ ok: true, status: "sent", message: "operator copy sent", owner: maskEmail(OWNER_EMAIL) });
   } catch (err) {
     return fail("server_error", String(err));
   } finally {
@@ -128,13 +128,22 @@ function doPost(e) {
   }
 }
 
-// 動作確認用（ブラウザで /exec を開くと {ok:true} が返る）
+// 動作確認用（ブラウザで /exec を開くと {ok:true, owner:"da***@gmail.com"} が返る）
+// アプリの「接続テスト」もこれを使い、控え先メール（伏せ字）を表示して設定ミスを防ぐ。
 function doGet() {
-  return json({ ok: true, status: "ready", service: "consent-mailer (owner-only)" });
+  return json({ ok: true, status: "ready", service: "consent-mailer (owner-only)", owner: maskEmail(OWNER_EMAIL) });
 }
 
 function safe(s) {
   return String(s).replace(/[^\w\-.]/g, "_");
+}
+// 控え先メールを伏せ字化（例: daisuke.n0520@gmail.com → da***@gmail.com）
+function maskEmail(e) {
+  e = String(e || "");
+  var at = e.indexOf("@");
+  if (at < 1) return "***";
+  var name = e.slice(0, at), dom = e.slice(at);
+  return name.slice(0, Math.min(2, name.length)) + "***" + dom;
 }
 function fail(code, message) {
   return json({ ok: false, code: code, message: message });

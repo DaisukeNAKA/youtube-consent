@@ -151,12 +151,16 @@
       </div>
 
       <details class="admin">
-        <summary>⚙ メール送信の設定（管理者のみ）</summary>
-        <label class="field">Apps Script のウェブアプリURL（/exec）</label>
+        <summary>⚙ メール送信の設定（この端末の控え先）</summary>
+        <label class="field">あなたのApps Script ウェブアプリURL（/exec）</label>
         <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
-        <p class="fieldnote">このスマホにのみ保存されます。設定すると完了時に、証票が<b>運営者控えとして</b>自動でメール送信されます（送信先はApps Script側で固定）。空欄なら送信は行いません。</p>
-        <button class="savebtn" id="saveEndpoint">保存</button>
-        <span id="endpointSaved" style="font-size:12px; color:var(--ok); margin-left:10px;"></span>
+        <p class="fieldnote">各自が自分のApps Scriptを設定します。<b>設定した本人のGmailにだけ</b>証票の控えが届きます（送信先はApps Script側で固定＝他人には送れません）。この端末にのみ保存。空欄なら送信しません。設定手順は下部の説明を参照。</p>
+        <div style="display:flex; gap:8px; margin-top:2px;">
+          <button class="savebtn" id="saveEndpoint">保存</button>
+          <button class="savebtn" id="testEndpoint" style="background:transparent; border:1px solid var(--line); color:var(--txt);">接続テスト</button>
+        </div>
+        <span id="endpointSaved" style="display:block; font-size:12px; color:var(--ok); margin-top:8px;"></span>
+        <div id="endpointOwner" style="font-size:13px; margin-top:6px;"></div>
       </details>
     </section>
 
@@ -315,22 +319,45 @@ $("#agree").addEventListener("change", refreshNext);
 ["#name","#guardian","#relation"].forEach(s=> $(s).addEventListener("input", refreshNext));
 
 /* ---------- admin: mail endpoint ---------- */
+const ENDPOINT_RE = /^https:\/\/script\.google\.com\/(a\/macros\/[^/]+|macros)\/s\/[^/]+\/exec$/;
+function setSaved(msg,color){ const el=$("#endpointSaved"); el.style.color=color||"var(--ok)"; el.textContent=msg||""; }
+function setOwner(html,color){ const el=$("#endpointOwner"); el.style.color=color||"var(--ok)"; el.innerHTML=html||""; }
+// エンドポイントにGETして控え先メール（伏せ字）を取得。設定ミスの確認用。
+async function pingEndpoint(url){
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),15000);
+  try{ const res=await fetch(url,{method:"GET",signal:ctrl.signal}); clearTimeout(t);
+    let d=null; try{ d=await res.json(); }catch(_){}
+    return d;
+  }catch(e){ clearTimeout(t); return null; }
+}
+async function verifyEndpoint(url){
+  setOwner('<span class="spin" style="border-color:var(--sub);border-right-color:transparent"></span> 接続を確認中…', "var(--sub)");
+  const d=await pingEndpoint(url);
+  if(d && d.ok){
+    setOwner("✓ 接続OK　控え先メール: <b>"+(d.owner||"（不明）")+"</b>", "var(--ok)");
+  }else{
+    setOwner("⚠ 接続を確認できませんでした。URLが正しいか、デプロイの「アクセスできるユーザー」が<b>全員</b>になっているか確認してください。", "var(--danger)");
+  }
+}
 (function initEndpoint(){
   const saved = localStorage.getItem("mailEndpoint") || "";
   if(saved) $("#endpointInput").value = saved;
   // 未設定の端末では設定パネルを開いて気づけるようにする
   if(!saved && !MAIL_ENDPOINT_DEFAULT) document.querySelector("details.admin").open = true;
+  if(saved) verifyEndpoint(saved);   // 保存済みなら控え先を表示（設定確認）
   $("#saveEndpoint").onclick = ()=>{
     const v = $("#endpointInput").value.trim();
     // 消費者アカウント: /macros/s/.../exec ／ Workspace: /a/macros/DOMAIN/s/.../exec の両方を許容
-    if(v && !/^https:\/\/script\.google\.com\/(a\/macros\/[^/]+|macros)\/s\/[^/]+\/exec$/.test(v)){
-      $("#endpointSaved").style.color="var(--danger)";
-      $("#endpointSaved").textContent="URLの形式が違います（…/exec）";
-      return;
-    }
+    if(v && !ENDPOINT_RE.test(v)){ setSaved("URLの形式が違います（…/exec）","var(--danger)"); return; }
     if(v) localStorage.setItem("mailEndpoint", v); else localStorage.removeItem("mailEndpoint");
-    $("#endpointSaved").style.color="var(--ok)";
-    $("#endpointSaved").textContent = v ? "保存しました" : "設定を解除しました";
+    setSaved(v ? "保存しました" : "設定を解除しました");
+    if(v) verifyEndpoint(v); else setOwner("");
+  };
+  $("#testEndpoint").onclick = ()=>{
+    const v = ($("#endpointInput").value.trim()) || mailEndpoint();
+    if(!v){ setOwner("先にURLを入力してください。","var(--danger)"); return; }
+    if(!ENDPOINT_RE.test(v)){ setOwner("URLの形式が違います（…/exec）","var(--danger)"); return; }
+    verifyEndpoint(v);
   };
 })();
 
@@ -634,8 +661,9 @@ async function sendMail(manual){
     let data=null; try{ data=await res.json(); }catch(_){}
     if(data && data.ok){
       state.mailed=true;
+      const to = data.owner ? "（控え先: "+data.owner+"）" : "";
       const dd = data.status==="already_sent" ? "（既に送信済みのため重複送信を防止しました）" : "";
-      setMailStat("ok","✓ 運営者控えを送信しました"+dd);
+      setMailStat("ok","✓ 運営者控えを送信しました"+to+dd);
       reenable("運営者控えを再送");
     }else if(data && (data.code || data.error)){
       const msg = data.message || MAIL_ERR[data.code||data.error] || (data.code||data.error);
