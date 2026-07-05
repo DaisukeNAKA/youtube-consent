@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>出演許諾アプリ かんたんガイド</title>
+<style>
+  :root{
+    --ink:#16181d; --paper:#f5f6f8; --card:#fff; --line:#e6e8ee; --sub:#6b7280;
+    --blue:#2563eb; --green:#16a34a; --amber:#f59e0b; --red:#ef4444; --purple:#7c3aed;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;
+    line-height:1.5; -webkit-text-size-adjust:100%;}
+  .wrap{max-width:480px; margin:0 auto; padding:0 14px 60px;}
+
+  /* header */
+  .hero{background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; border-radius:0 0 26px 26px;
+    padding:26px 20px 24px; text-align:center; margin-bottom:18px;}
+  .hero .emoji{font-size:46px; line-height:1;}
+  .hero h1{font-size:24px; font-weight:800; margin-top:8px; letter-spacing:.02em;}
+  .hero p{font-size:15px; opacity:.95; margin-top:6px;}
+
+  /* section band */
+  .band{display:flex; align-items:center; gap:10px; margin:26px 4px 12px; font-weight:800; font-size:19px;}
+  .band .pill{background:var(--ink); color:#fff; border-radius:999px; padding:4px 12px; font-size:13px; font-weight:700; white-space:nowrap;}
+  .band.prep .pill{background:var(--purple);}
+  .band.use .pill{background:var(--green);}
+
+  /* step card */
+  .step{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px;
+    display:flex; gap:14px; align-items:flex-start; margin-bottom:12px;}
+  .num{flex:0 0 40px; height:40px; border-radius:50%; background:var(--blue); color:#fff;
+    font-weight:800; font-size:20px; display:flex; align-items:center; justify-content:center;}
+  .prep .num{background:var(--purple);}
+  .use .num{background:var(--green);}
+  .step .ic{font-size:32px; line-height:1; flex:0 0 auto;}
+  .step .body{flex:1; min-width:0;}
+  .step .t{font-size:17px; font-weight:800;}
+  .step .d{font-size:14px; color:var(--sub); margin-top:2px;}
+
+  /* mock buttons */
+  .btnrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;}
+  .mock{display:inline-flex; align-items:center; gap:6px; font-size:14px; font-weight:700;
+    padding:7px 12px; border-radius:10px; border:1px solid var(--line); background:#fafbfc;}
+  .mock.blue{background:var(--blue); color:#fff; border-color:var(--blue);}
+  .mock.ghost{background:#fff;}
+  .arrow{font-size:16px; color:var(--sub); align-self:center;}
+
+  /* callouts */
+  .call{border-radius:14px; padding:12px 14px; margin-top:10px; font-size:14px; font-weight:600; display:flex; gap:9px; align-items:flex-start;}
+  .call .ci{font-size:20px; flex:0 0 auto;}
+  .call.warn{background:#fff7ed; border:1px solid #fed7aa; color:#9a3412;}
+  .call.danger{background:#fef2f2; border:1px solid #fecaca; color:#991b1b;}
+  .call.ok{background:#ecfdf5; border:1px solid #bbf7d0; color:#166534;}
+
+  .code{background:#0f172a; color:#e2e8f0; border-radius:12px; padding:12px 14px; margin-top:10px;
+    font-family:ui-monospace,Menlo,monospace; font-size:13px; white-space:normal; word-break:break-word; line-height:1.9;}
+  .code .hi{background:#fde047; color:#111; border-radius:5px; padding:2px 6px; font-weight:800; white-space:nowrap;}
+
+  /* usage strip */
+  .flow{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:8px 6px;}
+  .frow{display:flex; align-items:center; gap:12px; padding:12px 12px;}
+  .frow:not(:last-child){border-bottom:1px dashed var(--line);}
+  .frow .fn{flex:0 0 34px; height:34px; border-radius:50%; background:var(--green); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:16px;}
+  .frow .fi{font-size:30px;}
+  .frow .ft{font-size:17px; font-weight:800;}
+  .frow .fd{font-size:13px; color:var(--sub);}
+
+  /* qr / footer */
+  .qrbox{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; text-align:center; margin-top:22px;}
+  .qrbox h3{font-size:17px; font-weight:800;}
+  .qrbox svg{width:158px; height:158px; margin:12px auto 6px; display:block; image-rendering:pixelated;}
+  .qrbox a{color:var(--blue); font-weight:700; font-size:13px; word-break:break-all; text-decoration:none;}
+  .foot{text-align:center; color:var(--sub); font-size:13px; margin-top:20px;}
+  .foot b{color:var(--ink);}
+  .big{font-size:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="emoji">📸✍️</div>
+    <h1>出演許諾アプリ<br>かんたんガイド</h1>
+    <p>撮影OKを、その場でスマホでピッ！</p>
+  </div>
+
+  <!-- ============ PART 1 ============ -->
+  <div class="band prep"><span class="pill">🔧 さいしょだけ</span> 1回・5分で準備</div>
+
+  <div class="step prep">
+    <div class="num">1</div><div class="ic">📱</div>
+    <div class="body">
+      <div class="t">アプリを開く</div>
+      <div class="d">下のQRから開いて「ホーム画面に追加」しておくと便利</div>
+    </div>
+  </div>
+
+  <div class="step prep">
+    <div class="num">2</div><div class="ic">💻</div>
+    <div class="body">
+      <div class="t">script.google.com を開く</div>
+      <div class="d">パソコン推奨。「新しいプロジェクト」をタップ</div>
+      <div class="btnrow"><span class="mock ghost">＋ 新しいプロジェクト</span></div>
+    </div>
+  </div>
+
+  <div class="step prep">
+    <div class="num">3</div><div class="ic">📋</div>
+    <div class="body">
+      <div class="t">コードを貼る</div>
+      <div class="d">中さんから届いたコードを全部貼り付け</div>
+      <div class="code">var OWNER_EMAIL = <span class="hi">"自分のメール"</span>;</div>
+      <div class="call warn"><span class="ci">⚠️</span><div>変えるのは<b>この1行だけ</b>！ 自分のGmailアドレスに。あとは触らない</div></div>
+    </div>
+  </div>
+
+  <div class="step prep">
+    <div class="num">4</div><div class="ic">🚀</div>
+    <div class="body">
+      <div class="t">デプロイ（公開）</div>
+      <div class="d">右上「デプロイ」→「ウェブアプリ」</div>
+      <div class="btnrow"><span class="mock blue">🚀 デプロイ</span><span class="arrow">→</span><span class="mock">ウェブアプリ</span></div>
+      <div class="call danger"><span class="ci">⭐</span><div>アクセスできるユーザーは必ず<b>「全員」</b>を選ぶ！（ここ超重要）</div></div>
+    </div>
+  </div>
+
+  <div class="step prep">
+    <div class="num">5</div><div class="ic">😱→😀</div>
+    <div class="body">
+      <div class="t">こわい画面が出る…けど大丈夫</div>
+      <div class="d">「確認されていません」が出たら↓の順にタップ</div>
+      <div class="btnrow">
+        <span class="mock ghost">詳細</span><span class="arrow">→</span>
+        <span class="mock ghost">◯◯に移動</span><span class="arrow">→</span>
+        <span class="mock blue">許可</span>
+      </div>
+      <div class="call ok"><span class="ci">👍</span><div>自分で作ったアプリなので<b>安全</b>。ビビらず進んでOK</div></div>
+    </div>
+  </div>
+
+  <div class="step prep">
+    <div class="num">6</div><div class="ic">🔗</div>
+    <div class="body">
+      <div class="t">URLをアプリに貼る</div>
+      <div class="d">出てきた長いURLをコピー → アプリ①画面の「⚙ メール送信の設定」に貼る</div>
+      <div class="call ok"><span class="ci">🎉</span><div><b>「接続テスト」</b>を押して<b>自分のメール</b>が出たら準備完了！<br>（他人のメールが出たらURLが間違い）</div></div>
+    </div>
+  </div>
+
+  <!-- ============ PART 2 ============ -->
+  <div class="band use"><span class="pill">🎬 つかうとき</span> 毎回これだけ</div>
+
+  <div class="flow">
+    <div class="frow"><div class="fn">1</div><div class="fi">📖</div><div><div class="ft">読んでもらう</div><div class="fd">最後までスクロール → チェック</div></div></div>
+    <div class="frow"><div class="fn">2</div><div class="fi">✍️</div><div><div class="ft">名前を入れる</div><div class="fd">出演者の名前（未成年は保護者も）</div></div></div>
+    <div class="frow"><div class="fn">3</div><div class="fi">🤳</div><div><div class="ft">撮る</div><div class="fd">日時・場所が自動で写真に入る</div></div></div>
+    <div class="frow"><div class="fn">4</div><div class="fi">🖊️</div><div><div class="ft">サインしてもらう</div><div class="fd">指で枠内に</div></div></div>
+    <div class="frow"><div class="fn">5</div><div class="fi">✅</div><div><div class="ft">完了！</div><div class="fd">証票が「自分のGmail」に自動でとどく</div></div></div>
+  </div>
+
+  <div class="call ok" style="margin-top:14px;"><span class="ci">🔒</span><div class="big">証票が届くのは<b>自分だけ</b>。出演者や他人には送られません。安心。</div></div>
+
+  <!-- ============ QR ============ -->
+  <div class="qrbox">
+    <h3>📱 アプリはここから</h3>
+    <svg viewBox="0 0 33 33" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M0 0h33v33h-33z"/><path stroke="#111" stroke-width="1" fill="none" d="M2 2.5h7m1 0h1m4 0h4m5 0h7m-29 1h1m5 0h1m1 0h1m2 0h3m5 0h1m2 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h2m4 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h2m1 0h2m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h5m3 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h3m2 0h1m2 0h1m1 0h2m2 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-19 1h2m2 0h2m1 0h1m1 0h2m-21 1h2m2 0h3m3 0h1m1 0h1m3 0h2m1 0h2m2 0h1m1 0h4m-27 1h4m7 0h4m4 0h8m-29 1h2m1 0h1m1 0h2m1 0h3m2 0h1m1 0h4m3 0h1m1 0h1m3 0h1m-20 1h1m2 0h1m1 0h2m1 0h4m1 0h2m1 0h1m1 0h2m-27 1h2m2 0h2m3 0h2m3 0h2m2 0h2m1 0h1m3 0h1m-28 1h1m4 0h1m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1m1 0h1m1 0h7m-29 1h2m2 0h3m1 0h4m1 0h3m4 0h2m3 0h2m1 0h1m-26 1h1m5 0h1m1 0h1m2 0h2m1 0h1m5 0h2m2 0h2m-29 1h3m1 0h5m1 0h1m1 0h1m3 0h6m5 0h1m-28 1h2m5 0h1m4 0h1m1 0h5m3 0h4m1 0h2m-23 1h3m2 0h5m2 0h1m1 0h1m1 0h1m3 0h1m1 0h1m-27 1h4m2 0h2m2 0h1m4 0h1m1 0h1m2 0h2m3 0h2m-29 1h2m1 0h1m2 0h2m2 0h3m2 0h1m1 0h1m2 0h6m2 0h1m-21 1h1m1 0h4m1 0h6m3 0h1m3 0h1m-29 1h7m2 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h2m1 0h2m1 0h7m3 0h1m2 0h1m-28 1h1m1 0h3m1 0h1m1 0h1m1 0h1m4 0h3m1 0h7m1 0h2m-29 1h1m1 0h3m1 0h1m3 0h2m1 0h6m1 0h2m6 0h1m-29 1h1m1 0h3m1 0h1m2 0h3m2 0h2m2 0h1m2 0h1m3 0h4m-29 1h1m5 0h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h1m2 0h1m1 0h1m1 0h2m-29 1h7m1 0h1m2 0h2m2 0h1m1 0h2m1 0h1m1 0h4m1 0h1"/></svg>
+    <a href="https://daisukenaka.github.io/youtube-consent/">daisukenaka.github.io/youtube-consent/</a>
+  </div>
+
+  <div class="foot">
+    こまったら → <b>中さん</b>に連絡📩<br>
+    <span style="font-size:12px;">証票は法的記録です。丁寧に運用してね</span>
+  </div>
+
+</div>
+</body>
+</html>
