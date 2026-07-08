@@ -3,32 +3,43 @@
  * ── 運営者控えのみ送信モード ──
  *
  * 役割: フロント（index.html）からPOSTされた証票PNGを、
- *       サーバ側で固定した運営者アドレス（OWNER_EMAIL）に「のみ」メール送信する。
+ *       デプロイした本人（またはOWNER_EMAILで指定した宛先）に「のみ」メール送信する。
  *
  * ▼ セキュリティ設計の要点 ▼
- *  - 宛先はこのファイル内の定数 OWNER_EMAIL に固定。
+ *  - 宛先は ownerEmail() で決まる: OWNER_EMAIL が空なら「このスクリプトをデプロイした本人」
+ *    （Session.getEffectiveUser()）に自動で届く。→ コードを書き換えなくても誤配が起きない。
  *  - クライアントから送られてくる宛先情報（participantEmail / guardianEmail /
  *    recipients / to / cc / bcc 等）は一切読み取らず、完全に無視する。
  *  - したがって、エンドポイントURLとトークンが露出しても、第三者は
  *    「任意の宛先」へは送れない。届くのは運営者本人のメールボックスのみ。
  *  - 乱用されても DAILY_CAP と Gmail 残枠で自動的に止まる。
  *
- *  既存の多重防御は維持:
+ *  多重防御:
  *   1) SHARED_TOKEN による bot 除け
- *   2) 証票ID単位の冪等化（同じIDは二重送信しない＝再送しても重複しない）
- *   3) 1日あたりの送信上限（DAILY_CAP）＋ Gmail 残枠チェック
+ *   2) 証票ID単位の冪等化（同じIDは二重送信しない。キーは送信前に予約し、失敗時は取り消す）
+ *   3) 1日あたりの送信上限（DAILY_CAP）＋ Gmail 残枠チェック（日界は日本時間で判定）
  *   4) LockService による同時実行の直列化
- *   5) dataURL の形式検証・PNG添付ファイル名の安全化
+ *   5) dataURL の形式検証・添付ファイル名の安全化
  *   6) code / message 形式のエラー返却
+ *   7) 古い記録キーの自動削除（30日超。PropertiesServiceの容量枯渇防止）
  *
  * ▼ 設定 ▼
- *  - OWNER_EMAIL  : 運営者の宛先（唯一の送信先。クライアントからは変更不可）
- *  - SHARED_TOKEN : フロントの MAIL_TOKEN と必ず同じ値にする
+ *  - OWNER_EMAIL  : 通常は空のままでOK（デプロイした本人のGmailに届く）。
+ *                   別のアドレスで受け取りたい場合のみ "xxx@example.com" を設定。
+ *  - SHARED_TOKEN : フロントの MAIL_TOKEN と必ず同じ値にする（変更しないこと）
  *  - DAILY_CAP    : 1日に送るメール数の上限（Gmail無料枠は約100/日）
  */
-var OWNER_EMAIL  = "daisuke.n0520@gmail.com";
+var VERSION      = "2.1";
+var OWNER_EMAIL  = "";
 var SHARED_TOKEN = "yt-consent-883d0d5e9919fec7c85d0217";
 var DAILY_CAP    = 90;
+var TIMEZONE     = "Asia/Tokyo";   // 日次上限の日界（スクリプトのタイムゾーン設定に依存させない）
+
+function ownerEmail() {
+  var e = String(OWNER_EMAIL || "").trim();
+  if (!e) { try { e = Session.getEffectiveUser().getEmail(); } catch (ignore) { e = ""; } }
+  return /@.+\./.test(e) ? e : "";
+}
 
 function doPost(e) {
   var lock = LockService.getScriptLock();
@@ -48,29 +59,38 @@ function doPost(e) {
       return fail("unauthorized", "認証エラー（合言葉が一致しません）");
     }
 
+    // 宛先の確定（空なら設定不備として即エラー）
+    var owner = ownerEmail();
+    if (!owner) {
+      return fail("not_configured", "送信先メールを特定できません。Code.gs冒頭のOWNER_EMAILに自分のメールを設定して再デプロイしてください");
+    }
+
     var id = String(data.id || "");
     var props = PropertiesService.getScriptProperties();
 
     // (2) 冪等化: 同じ証票IDは二重送信しない
     if (id && props.getProperty("sent_" + id)) {
-      return json({ ok: true, status: "already_sent", message: "operator copy already sent", owner: maskEmail(OWNER_EMAIL) });
+      return json({ ok: true, status: "already_sent", message: "operator copy already sent", owner: maskEmail(owner) });
     }
 
-    // (5) 画像（dataURL）の形式検証 → base64本体を取り出す
+    // (5) 画像（dataURL）の形式検証 → base64本体を取り出す（MIMEは実体に合わせる）
     var dataUrl = String(data.imageBase64 || "");
-    if (!/^data:image\/(png|jpeg);base64,/.test(dataUrl)) {
+    var mimeMatch = dataUrl.match(/^data:image\/(png|jpeg);base64,/);
+    if (!mimeMatch) {
       return fail("no_image", "画像データがありません（dataURL形式が不正）");
     }
+    var mime = "image/" + mimeMatch[1];
+    var ext = mimeMatch[1] === "jpeg" ? ".jpg" : ".png";
     var b64 = dataUrl.replace(/^data:image\/\w+;base64,/, "");
     if (!b64) return fail("no_image", "画像データが空です");
     var bytes = Utilities.base64Decode(b64);
-    var blob = Utilities.newBlob(bytes, "image/png", safe(id || "consent") + ".png"); // ファイル名の安全化
+    var blob = Utilities.newBlob(bytes, mime, safe(id || "consent") + ext); // ファイル名の安全化
 
     // (3) 送信上限チェック（自前の日次上限 ＋ Gmail残枠）。宛先は運営者1件のみ。
-    var tz = Session.getScriptTimeZone() || "Asia/Tokyo";
-    var day = Utilities.formatDate(new Date(), tz, "yyyyMMdd");
+    var day = Utilities.formatDate(new Date(), TIMEZONE, "yyyyMMdd");
     var countKey = "count_" + day;
     var used = parseInt(props.getProperty(countKey) || "0", 10);
+    if (used === 0) pruneOldKeys(props);   // 日付が変わった最初の送信で古い記録を掃除
     if (used + 1 > DAILY_CAP) return fail("daily_limit", "本日の送信上限に達しました");
     if (MailApp.getRemainingDailyQuota() < 1) return fail("quota_exceeded", "Gmailの本日の送信上限に達しました");
 
@@ -106,8 +126,8 @@ function doPost(e) {
     if (id) props.setProperty("sent_" + id, JSON.stringify({ at: new Date().toISOString(), pending: true }));
 
     try {
-      // (★) 宛先は OWNER_EMAIL 固定。to/cc/bcc をクライアントから受け付けない。
-      MailApp.sendEmail(OWNER_EMAIL, subject, body, {
+      // (★) 宛先は ownerEmail() 固定。to/cc/bcc をクライアントから受け付けない。
+      MailApp.sendEmail(owner, subject, body, {
         attachments: [blob],
         name: "YouTube出演許諾"
       });
@@ -120,7 +140,7 @@ function doPost(e) {
     props.setProperty(countKey, String(used + 1));
     if (id) props.setProperty("sent_" + id, JSON.stringify({ at: new Date().toISOString() }));
 
-    return json({ ok: true, status: "sent", message: "operator copy sent", owner: maskEmail(OWNER_EMAIL) });
+    return json({ ok: true, status: "sent", message: "operator copy sent", owner: maskEmail(owner) });
   } catch (err) {
     return fail("server_error", String(err));
   } finally {
@@ -128,22 +148,40 @@ function doPost(e) {
   }
 }
 
-// 動作確認用（ブラウザで /exec を開くと {ok:true, owner:"da***@gmail.com"} が返る）
+// 動作確認用（ブラウザで /exec を開くと {ok:true, owner:"da***e@gmail.com"} が返る）
 // アプリの「接続テスト」もこれを使い、控え先メール（伏せ字）を表示して設定ミスを防ぐ。
 function doGet() {
-  return json({ ok: true, status: "ready", service: "consent-mailer (owner-only)", owner: maskEmail(OWNER_EMAIL) });
+  var owner = ownerEmail();
+  if (!owner) {
+    return json({ ok: false, code: "not_configured", message: "送信先メールを特定できません。Code.gs冒頭のOWNER_EMAILに自分のメールを設定して再デプロイしてください" });
+  }
+  return json({ ok: true, status: "ready", service: "consent-mailer (owner-only)", version: VERSION, owner: maskEmail(owner) });
+}
+
+// 30日より古い記録キー（count_YYYYMMDD / sent_CONSENT-YYYYMMDD-…）を削除（容量枯渇防止）
+function pruneOldKeys(props) {
+  try {
+    var cutoff = Number(Utilities.formatDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), TIMEZONE, "yyyyMMdd"));
+    var keys = props.getKeys();
+    for (var i = 0; i < keys.length; i++) {
+      var m = keys[i].match(/^count_(\d{8})$/) || keys[i].match(/^sent_CONSENT-(\d{8})-/);
+      if (m && Number(m[1]) < cutoff) props.deleteProperty(keys[i]);
+    }
+  } catch (ignore) {}
 }
 
 function safe(s) {
   return String(s).replace(/[^\w\-.]/g, "_");
 }
-// 控え先メールを伏せ字化（例: daisuke.n0520@gmail.com → da***@gmail.com）
+// 控え先メールの伏せ字化（例: daisuke.n0520@gmail.com → da***0@gmail.com）
 function maskEmail(e) {
   e = String(e || "");
   var at = e.indexOf("@");
   if (at < 1) return "***";
   var name = e.slice(0, at), dom = e.slice(at);
-  return name.slice(0, Math.min(2, name.length)) + "***" + dom;
+  var head = name.slice(0, Math.min(2, name.length));
+  var tail = name.length > 3 ? name.slice(-1) : "";
+  return head + "***" + tail + dom;
 }
 function fail(code, message) {
   return json({ ok: false, code: code, message: message });

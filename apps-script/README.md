@@ -13,9 +13,9 @@
 > 👥 **友達（仲間）と共有して使う場合**
 > アプリのURL（`https://daisukenaka.github.io/youtube-consent/`）は全員で共通です。
 > **各自が自分のApps Scriptを1つ用意**し、自分の `/exec` URL をアプリの「⚙ メール送信の設定」に登録します。
-> 設定した本人のGmailにだけ控えが届くので、友達の証票が他人に届くことはありません。
-> **手順は全員同じ。変えるのは `Code.gs` の `OWNER_EMAIL`（1行）だけ**で、`SHARED_TOKEN` はそのままにしてください
-> （アプリ側の合言葉と一致させる必要があるため）。
+> **コードは書き換え不要**：控えは自動的に「デプロイした本人のGmail」に届く仕組みです
+> （`OWNER_EMAIL` が空のときはデプロイ者本人＝あなたに届きます）。
+> `SHARED_TOKEN` もそのままにしてください（アプリ側の合言葉と一致させる必要があるため）。
 
 所要時間：約5分。**一度だけ**設定すれば、以降はアプリ側だけで完結します。
 
@@ -30,8 +30,8 @@
 ### 2. コードを貼る
 1. 最初から入っている `function myFunction() {}` を**全部消す**
 2. このフォルダの [`Code.gs`](./Code.gs) の中身を**全部コピーして貼り付け**
-3. 冒頭の設定を確認
-   - `OWNER_EMAIL` … **証票の送信先（唯一の宛先）。友達が使う場合は、ここを自分のメールに変える**（変えるのはここだけ）
+3. 冒頭の設定を確認（**基本は何も書き換えなくてOK**）
+   - `OWNER_EMAIL` … 空のままなら**デプロイした本人のGmail**に届きます。別のアドレスで受け取りたい場合のみ記入
    - `SHARED_TOKEN` … アプリ側の合言葉と一致。**そのまま触らない**（変える場合は index.html の `MAIL_TOKEN` も同じ値に）
    - `DAILY_CAP` … 1日の送信上限（既定90。撮影件数に合わせて小さくしてもよい）
 4. 💾 保存（Ctrl/Cmd + S）
@@ -69,9 +69,14 @@
 ## レスポンス仕様（フロントと整合）
 - 送信成功: `{"ok":true,"status":"sent","message":"operator copy sent","owner":"〇〇***@gmail.com"}`
 - 冪等（送信済み）: `{"ok":true,"status":"already_sent","message":"operator copy already sent","owner":"..."}`
-- 疎通確認(GET): `{"ok":true,"status":"ready","owner":"〇〇***@gmail.com"}`
+- 疎通確認(GET): `{"ok":true,"status":"ready","version":"2.1","owner":"〇〇***@gmail.com"}`
 - エラー: `{"ok":false,"code":"<コード>","message":"<説明>"}`
-  （コード例: `unauthorized` / `no_image` / `bad_request` / `no_body` / `busy` / `daily_limit` / `quota_exceeded` / `server_error`）
+  （コード例: `unauthorized` / `no_image` / `bad_request` / `no_body` / `busy` / `daily_limit` / `quota_exceeded` / `not_configured` / `server_error`）
+
+## 過去の版からの更新（v2.1）
+- `OWNER_EMAIL` の既定が空になり、**デプロイ本人に自動で届く**方式に（変更忘れによる誤配を構造的に防止）
+- 日次上限の日付境界を日本時間に固定／30日超の古い記録キーを自動削除／`doGet` にバージョン表示を追加
+- **既にデプロイ済みの人**が最新版に上げるには：新しい `Code.gs` を貼り直し →「デプロイを管理 → 編集 → 新バージョン → デプロイ」（URLは変わりません）
 
 ## コードを更新したとき（重要）
 Apps Scriptは、**「デプロイ」→「デプロイを管理」→ 鉛筆✏️→ バージョン「新バージョン」→ デプロイ** で再公開しないと反映されません。

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>出演許諾 証票作成</title>
 <style>
   :root{
@@ -129,13 +129,13 @@
         <p><b>3. 編集・二次利用</b><br>運営者が本コンテンツを編集・加工し、切り抜き・サムネイル・広告・宣伝素材等に二次利用することに同意します。</p>
         <p><b>4. 期間・地域</b><br>本同意は期間・地域の定めなく有効とし、公開後の削除義務を運営者は負わないことを理解します。</p>
         <p><b>5. 無償</b><br>本コンテンツの利用について、原則として対価の支払いがないことを理解し、これに同意します。</p>
-        <p><b>6. 個人情報・記録の保管</b><br>本証票に記録される氏名・署名・撮影日時・位置情報が、出演同意の証跡として運営者に送信・保管され、その目的にのみ利用されることに同意します。証票は運営者の記録用としてのみ送信され、出演者・保護者/署名者へ自動でメール送信されることはありません（メールアドレスは取得しません）。控えが必要な場合は、運営者が保存済みの証票を個別にお渡しします。</p>
+        <p><b>6. 個人情報・記録の保管</b><br>本証票に記録される氏名・写真（容貌）・署名・撮影日時・位置情報が、出演同意の証跡として運営者に送信・保管され、その目的にのみ利用されることに同意します。位置情報を住所として表示するため、緯度経度が地図サービス（OpenStreetMap Nominatim）へ送信されます（氏名等は送信されません）。証票は運営者の記録用としてのみ送信され、出演者・保護者/署名者へ自動でメール送信されることはありません（メールアドレスは取得しません）。控えが必要な場合は、運営者が保存済みの証票を個別にお渡しします。</p>
         <p><b>7. 撤回について</b><br>公開前であれば撤回を申し出ることができますが、公開後の拡散済みコンテンツについては技術的に削除できない場合があることを理解します。</p>
         <p>私は上記すべてを一読し、内容を理解したうえで、自らの意思で出演を許諾します。</p>
         <!-- ▲▲▲ 文面ここまで ▲▲▲ -->
         <div class="end" id="docEnd">― 以上を確認しました ―</div>
       </div>
-      <div class="scrollnote" id="scrollnote">⬇ 最後までスクロールしてください</div>
+      <div class="scrollnote" id="scrollnote" aria-live="polite">⬇ 最後までスクロールしてください</div>
 
       <div class="card" style="margin-top:8px">
         <div style="font-size:13px; color:var(--sub); margin-bottom:8px">出演者の区分</div>
@@ -145,16 +145,16 @@
         </div>
       </div>
 
-      <div class="chk" id="chkWrap">
+      <label class="chk" id="chkWrap">
         <input type="checkbox" id="agree">
         <span>上記の同意書を最後まで読み、内容を理解したうえで出演を許諾します。</span>
-      </div>
+      </label>
 
       <details class="admin">
         <summary>⚙ メール送信の設定（この端末の控え先）</summary>
         <label class="field">あなたのApps Script ウェブアプリURL（/exec）</label>
         <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
-        <p class="fieldnote">各自が自分のApps Scriptを設定します。<b>設定した本人のGmailにだけ</b>証票の控えが届きます（送信先はApps Script側で固定＝他人には送れません）。この端末にのみ保存。空欄なら送信しません。設定手順は下部の説明を参照。</p>
+        <p class="fieldnote">各自が自分のApps Scriptを設定します。<b>デプロイした本人のGmailにだけ</b>証票の控えが届きます（送信先はApps Script側で固定＝他人には送れません）。この端末にのみ保存。空欄なら送信しません。設定手順は <a href="guide.html" target="_blank" style="color:var(--accent)">かんたんガイド</a> を参照。</p>
         <div style="display:flex; gap:8px; margin-top:2px;">
           <button class="savebtn" id="saveEndpoint">保存</button>
           <button class="savebtn" id="testEndpoint" style="background:transparent; border:1px solid var(--line); color:var(--txt);">接続テスト</button>
@@ -217,7 +217,7 @@
       <p class="hint">証票PNGを<b>運営者控えとして</b>メール送信します。出演者・保護者/署名者には送信されません。必要な場合は運営者が保存済み証票を個別に共有してください。</p>
       <div class="result">
         <img id="resultImg" alt="証票">
-        <div class="mailstat" id="mailStat" style="display:none"></div>
+        <div class="mailstat" id="mailStat" style="display:none" aria-live="polite"></div>
         <div class="meta" id="resultMeta"></div>
       </div>
     </section>
@@ -233,6 +233,9 @@
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
+// オフライン対策（地下ライブハウス等）: 本番HTTPSのみでキャッシュを有効化
+if("serviceWorker" in navigator && location.protocol==="https:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* ===== メール送信の設定 ===== */
 // 既定のApps Script URL（空の場合は端末の設定 or 未送信）。運用で固定したい場合はここに /exec URL を記入。
@@ -334,7 +337,10 @@ async function verifyEndpoint(url){
   setOwner('<span class="spin" style="border-color:var(--sub);border-right-color:transparent"></span> 接続を確認中…', "var(--sub)");
   const d=await pingEndpoint(url);
   if(d && d.ok){
-    setOwner("✓ 接続OK　控え先メール: <b>"+(d.owner||"（不明）")+"</b>", "var(--ok)");
+    // d.owner はサーバ由来のため必ずエスケープ（XSS防止）
+    setOwner("✓ 接続OK　控え先メール: <b>"+esc(d.owner||"（不明）")+"</b>", "var(--ok)");
+  }else if(d && d.message){
+    setOwner("⚠ "+esc(d.message), "var(--danger)");
   }else{
     setOwner("⚠ 接続を確認できませんでした。URLが正しいか、デプロイの「アクセスできるユーザー」が<b>全員</b>になっているか確認してください。", "var(--danger)");
   }
@@ -377,6 +383,7 @@ function captureContext(){
   } else { state.geo={error:true}; }
 }
 function reverseGeocode(lat,lng){
+  const geoRef = state.geo;   // この取得サイクルのgeoにのみ書き込む（古い応答の混入防止）
   const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja&zoom=18`;
   fetch(url,{headers:{"Accept":"application/json"}})
     .then(r=>r.ok?r.json():Promise.reject())
@@ -391,7 +398,7 @@ function reverseGeocode(lat,lng){
       ].filter(Boolean);
       let addr = parts.join("");
       if(!addr) addr = d.display_name || "";
-      if(addr && state.geo && !state.geo.error){ state.geo.address=addr; updateLiveStamp(); }
+      if(addr && state.geo===geoRef && !geoRef.error){ geoRef.address=addr; updateLiveStamp(); }
     })
     .catch(()=>{ /* 住所変換失敗時は座標のみ */ });
 }
@@ -401,25 +408,37 @@ function fmtGeo(g){ if(!g) return "位置情報 取得中…"; if(g.error) retur
   if(g.address) return g.address;
   return `緯度 ${g.lat.toFixed(6)} / 経度 ${g.lng.toFixed(6)}`; }
 function fmtCoords(g){ if(!g||g.error||g.lat==null) return ""; return `緯度 ${g.lat.toFixed(6)} / 経度 ${g.lng.toFixed(6)}（±${Math.round(g.acc)}m）`; }
+// 証票・メール用の確定表記（「取得中…」のような一時テキストを記録に残さない）
+function fmtPlace(){ return state.geo ? fmtGeo(state.geo) : "位置情報 未取得"; }
 function updateLiveStamp(){
   if(!state.when) return;
   $("#liveStamp").innerHTML = `${fmtTime(state.when)}<br>${fmtGeo(state.geo)}`;
 }
 
 /* ---------- step 3: camera ---------- */
-let stream=null, facing="environment";
+let stream=null, facing="environment", camGen=0;
+const CAM_ERR = {
+  NotAllowedError:"カメラの使用が「許可しない」になっています。ブラウザの設定（このサイトの権限）でカメラを「許可」にして、ページを開き直してください。",
+  NotFoundError:"カメラが見つかりませんでした。この端末にカメラがあるかご確認ください。",
+  NotReadableError:"カメラを他のアプリが使用中のようです。他のカメラアプリを閉じてから「カメラ切替」を押してください。",
+  OverconstrainedError:"このカメラ向きを使えません。「カメラ切替」をお試しください。"
+};
 async function startCamera(){
+  const gen = ++camGen;             // 起動の世代番号（連打・画面移動との競合でストリームが漏れるのを防止）
   state.photo=null;                 // 撮影ステップに入る/戻るたびに撮り直しを強制（ID・日時と焼き込みの不整合を防止）
   captureContext(); updateLiveStamp();
   $("#camWarn").style.display="none";
   $("#photoPreview").style.display="none"; $("#video").style.display="block";
   $("#shoot").style.display="block"; $("#retake").style.display="none"; $("#switchCam").style.display="block";
   try{
-    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:facing}, audio:false});
-    $("#video").srcObject = stream;
+    const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:facing}, audio:false});
+    if(gen!==camGen || state.step!==3){ s.getTracks().forEach(t=>t.stop()); return; }
+    stream = s;
+    $("#video").srcObject = s;
   }catch(err){
+    if(gen!==camGen) return;
     $("#camWarn").style.display="block";
-    $("#camWarn").innerHTML = "カメラを起動できません（"+err.name+"）。<br>HTTPS環境で開き、カメラ権限を許可してください。";
+    $("#camWarn").textContent = CAM_ERR[err.name] || ("カメラを起動できません（"+err.name+"）。ページを開き直してみてください。");
   }
 }
 function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
@@ -441,7 +460,9 @@ $("#retake").onclick = ()=>{ state.photo=null; startCamera(); refreshNext(); };
 
 function burnWatermark(ctx,W,H){
   const fs = Math.max(18, Math.round(W*0.032));
-  const lines = [ fmtTime(state.when), fmtGeo(state.geo) ];
+  // 「取得中…」のような一時テキストを恒久焼き込みしない
+  const geoLine = state.geo ? fmtGeo(state.geo) : "位置情報 未取得（撮影時）";
+  const lines = [ fmtTime(state.when), geoLine ];
   const co = fmtCoords(state.geo); if(co) lines.push(co);
   lines.push(state.id);
   ctx.font = `600 ${fs}px -apple-system, "Hiragino Sans", sans-serif`;
@@ -454,7 +475,7 @@ function burnWatermark(ctx,W,H){
   // text with subtle shadow for legibility
   ctx.fillStyle="#fff";
   ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=4;
-  lines.forEach((t,i)=> ctx.fillText(t, pad, H-boxH+pad*0.6 + i*lh));
+  lines.forEach((t,i)=> ctx.fillText(t, pad, H-boxH+pad*0.6 + i*lh, W-pad*2));
   ctx.shadowBlur=0;
 }
 
@@ -484,6 +505,22 @@ function sigEnd(){ if(!drawing) return; drawing=false; if(sigDirty){ state.signa
   window.addEventListener("mouseup",sigEnd);
 })();
 $("#sigClear").onclick = ()=>{ initSig(); state.signature=null; refreshNext(); };
+// 署名中に画面回転/リサイズしても座標がずれないよう、描画済みの署名を保って再初期化
+window.addEventListener("resize", ()=>{
+  if(state.step!==4) return;
+  const prev = sigDirty ? $("#sig").toDataURL() : null;
+  initSig();
+  if(prev){
+    const i=new Image();
+    i.onload=()=>{
+      const r=$("#sig").getBoundingClientRect();
+      sigCtx.drawImage(i,0,0,r.width,r.height);
+      sigDirty=true; $("#sigph").style.display="none";
+      state.signature=$("#sig").toDataURL("image/png"); refreshNext();
+    };
+    i.src=prev;
+  }
+});
 
 /* ---------- step 5: build certificate PNG ---------- */
 async function buildCertificate(){
@@ -494,9 +531,20 @@ async function buildCertificate(){
   const photoW = W-pad*2;
   const photoH = Math.round(photoW * (photoImg.height/photoImg.width));
   const sigH = 220;
-  let H = 0;
-  const headerH=190, ctxH=180, sealArea=0;
-  H = pad + headerH + ctxH + photoH + 60 + sigH + 130 + pad;
+
+  // 記載行を先に確定し、キャンバス高さを実測ベースで算出（固定値だと行数増で朱印が下端で切れる）
+  const ageTxt = state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）";
+  const rows = [
+    ["区分", ageTxt],
+    ["出演者氏名", state.name || "―"],
+  ];
+  if(state.age==="minor") rows.push(["保護者氏名", (state.guardian||"―") + (state.relation?`（${state.relation}）`:"")]);
+  rows.push(["撮影日時", fmtTime(state.when)]);
+  rows.push(["撮影場所", fmtPlace()]);
+  const coRow=fmtCoords(state.geo); if(coRow) rows.push(["座標", coRow]);
+  rows.push(["証票ID", state.id]);
+  // ヘッダ実消費138 / 行40px+末尾14 / 写真後40+ラベル30+署名枠+30 / 朱印+脚注180 / 上下pad
+  const H = pad + 138 + rows.length*40 + 14 + photoH + 40 + 30 + sigH + 30 + 180 + pad;
 
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
   const x=cv.getContext("2d");
@@ -513,23 +561,12 @@ async function buildCertificate(){
   x.fillText("YouTube等への出演・公開に関する同意の記録", pad, y); y+=44;
   x.strokeStyle="#e2e5ea"; x.lineWidth=2; x.beginPath(); x.moveTo(pad,y); x.lineTo(W-pad,y); x.stroke(); y+=30;
 
-  // context block
-  x.font="400 26px -apple-system,'Hiragino Sans',sans-serif"; x.fillStyle="#222";
-  const ageTxt = state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）";
-  const rows = [
-    ["区分", ageTxt],
-    ["出演者氏名", state.name || "―"],
-  ];
-  if(state.age==="minor") rows.push(["保護者氏名", (state.guardian||"―") + (state.relation?`（${state.relation}）`:"")]);
-  rows.push(["撮影日時", fmtTime(state.when)]);
-  rows.push(["撮影場所", fmtGeo(state.geo)]);
-  const coRow=fmtCoords(state.geo); if(coRow) rows.push(["座標", coRow]);
-  rows.push(["証票ID", state.id]);
+  // context block（rowsは上で構築済み）
   rows.forEach(r=>{
     x.fillStyle="#888"; x.font="400 22px -apple-system,'Hiragino Sans',sans-serif";
     x.fillText(r[0], pad, y);
     x.fillStyle="#111"; x.font="600 24px -apple-system,'Hiragino Sans',sans-serif";
-    x.fillText(r[1], pad+200, y);
+    x.fillText(r[1], pad+200, y, W-pad*2-200);   // 長い住所・氏名でも幅内に収める
     y+=40;
   });
   y+=14;
@@ -539,14 +576,15 @@ async function buildCertificate(){
   x.strokeStyle="#d7dce6"; x.lineWidth=2; x.strokeRect(pad,y,photoW,photoH);
   y+=photoH+40;
 
-  // signature label + image
+  // signature label + image（ラベルが白枠に重ならないよう30px空ける）
   x.fillStyle="#888"; x.font="400 22px -apple-system,'Hiragino Sans',sans-serif";
-  x.fillText("署名", pad, y); y+=8;
-  const sigW = Math.min(W-pad*2, sigH*(sigImg.width/sigImg.height));
-  // white box for signature
+  x.fillText("署名", pad, y); y+=30;
   x.fillStyle="#fff"; x.strokeStyle="#d7dce6"; x.lineWidth=2;
   x.fillRect(pad,y,W-pad*2,sigH); x.strokeRect(pad,y,W-pad*2,sigH);
-  x.drawImage(sigImg, pad+20, y+10, sigW-40>0?sigW-40:sigW, sigH-20);
+  // アスペクト比を保って描画（署名の歪み防止）
+  const drawH = sigH-20;
+  const drawW = Math.min(W-pad*2-40, Math.round(drawH*(sigImg.width/sigImg.height)));
+  x.drawImage(sigImg, pad+20, y+10, drawW, drawH);
   y+=sigH+30;
 
   // 朱印 seal (同意済)
@@ -559,7 +597,7 @@ async function buildCertificate(){
   const dataURL = cv.toDataURL("image/png");
   state.cert = dataURL;
   $("#resultImg").src = dataURL;
-  $("#resultMeta").innerHTML = `証票ID: ${state.id}<br>${fmtTime(state.when)}<br>${fmtGeo(state.geo)}`;
+  $("#resultMeta").innerHTML = `証票ID: ${esc(state.id)}<br>${esc(fmtTime(state.when))}<br>${esc(fmtPlace())}`;
   renderResultButtons();
   maybeAutoSend();
 }
@@ -611,7 +649,24 @@ function setMailStat(kind,msg,spin){
 }
 function maybeAutoSend(){
   if(!mailEndpoint()){
-    setMailStat("", "運営者控えの自動送信は未設定です（①画面の「⚙ メール送信の設定」でURLを登録すると送信されます）。");
+    // 証票を捨てずにこの場で設定→送信できるインライン設定（①へ戻ると写真の撮り直しが必要になるため）
+    setMailStat("", "控えメールの送信先が未設定です。ここで設定できます：");
+    const el=$("#mailStat"); el.style.flexWrap="wrap";
+    const box=document.createElement("div");
+    box.style.cssText="display:flex;gap:8px;margin-top:10px;width:100%";
+    const inp=document.createElement("input");
+    inp.type="url"; inp.placeholder="https://script.google.com/macros/s/.../exec";
+    inp.style.cssText="flex:1;min-width:0;padding:10px;font-size:13px;border-radius:8px;border:1px solid var(--line);background:#12151c;color:var(--txt)";
+    const b=document.createElement("button");
+    b.textContent="保存して送信"; b.className="savebtn"; b.style.marginTop="0"; b.style.flex="0 0 auto";
+    b.onclick=()=>{
+      const v=inp.value.trim();
+      if(!ENDPOINT_RE.test(v)){ toast("URLの形式が違います（…/exec）"); return; }
+      localStorage.setItem("mailEndpoint", v);
+      $("#endpointInput").value=v;
+      sendMail(true);
+    };
+    box.appendChild(inp); box.appendChild(b); el.appendChild(box);
     return;
   }
   sendMail(false);
@@ -624,6 +679,7 @@ const MAIL_ERR = {
   busy:"混み合っています。少し待って再送してください",
   daily_limit:"本日の送信上限に達しました（明日再度お試しください）",
   quota_exceeded:"Gmailの本日の送信上限に達しました",
+  not_configured:"送信先メールが未設定です（Apps Script側の設定を確認してください）",
   server_error:"サーバ側でエラーが発生しました"
 };
 async function sendMail(manual){
@@ -642,7 +698,7 @@ async function sendMail(manual){
     guardianRelation: state.relation,
     ageKind: state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）",
     when: fmtTime(state.when),
-    place: fmtGeo(state.geo),
+    place: fmtPlace(),
     coords: fmtCoords(state.geo),
     userAgent: navigator.userAgent
   };
@@ -709,6 +765,7 @@ function resetAll(){
   $("#scrollnote").textContent="⬇ 最後までスクロールしてください"; $("#scrollnote").classList.remove("done");
   doc.scrollTop=0;
   $("#mailStat").style.display="none"; $("#mailStat").className="mailstat";
+  $("#resultImg").removeAttribute("src");   // 前の出演者の証票が次の⑤で一瞬見えるのを防止
   const rb=$("#resultBtns"); if(rb) rb.remove();
   const rb2=$("#resultBtns2"); if(rb2) rb2.remove();
   show(1);
