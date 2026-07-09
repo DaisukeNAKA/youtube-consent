@@ -24,20 +24,33 @@
  *   7) 古い記録キーの自動削除（30日超。PropertiesServiceの容量枯渇防止）
  *
  * ▼ 設定 ▼
- *  - OWNER_EMAIL  : 通常は空のままでOK（デプロイした本人のGmailに届く）。
- *                   別のアドレスで受け取りたい場合のみ "xxx@example.com" を設定。
+ *  - OWNER_EMAIL  : ★必須★ 自分のメールアドレスを "" の中に記入（控えの届き先）。
+ *                   例) var OWNER_EMAIL = "taro@gmail.com";
+ *                   タイプミスが心配な場合は、記入せずエディタ上部の関数選択で「setup」を
+ *                   選んで実行すると、自分のアドレスが自動登録される（どちらか一方でOK）。
+ *                   ※未設定の場合は誤配せず not_configured エラーで安全に止まる。
  *  - SHARED_TOKEN : フロントの MAIL_TOKEN と必ず同じ値にする（変更しないこと）
  *  - DAILY_CAP    : 1日に送るメール数の上限（Gmail無料枠は約100/日）
  */
-var VERSION      = "2.1";
+var VERSION      = "2.1.1";
 var OWNER_EMAIL  = "";
 var SHARED_TOKEN = "yt-consent-883d0d5e9919fec7c85d0217";
 var DAILY_CAP    = 90;
 var TIMEZONE     = "Asia/Tokyo";   // 日次上限の日界（スクリプトのタイムゾーン設定に依存させない）
 
+// タイプミスなしで控え先を登録する補助関数。エディタで「setup」を選んで実行→承認すると
+// 自分のアドレスが保存される（Webアプリの匿名実行では本人特定できないため、エディタ実行が必要）。
+function setup() {
+  var e = Session.getEffectiveUser().getEmail();
+  if (!/@.+\./.test(e)) throw new Error("メールアドレスを取得できませんでした。OWNER_EMAILに直接記入してください");
+  PropertiesService.getScriptProperties().setProperty("owner_email", e);
+  Logger.log("控え先を設定しました: " + e);
+}
+
 function ownerEmail() {
   var e = String(OWNER_EMAIL || "").trim();
-  if (!e) { try { e = Session.getEffectiveUser().getEmail(); } catch (ignore) { e = ""; } }
+  if (!e) { try { e = String(PropertiesService.getScriptProperties().getProperty("owner_email") || ""); } catch (ignore) {} }
+  if (!e) { try { e = Session.getEffectiveUser().getEmail(); } catch (ignore) { e = ""; } }  // 環境によっては空
   return /@.+\./.test(e) ? e : "";
 }
 
