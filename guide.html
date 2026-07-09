@@ -76,6 +76,12 @@
   .foot{text-align:center; color:var(--sub); font-size:13px; margin-top:20px;}
   .foot b{color:var(--ink);}
   .big{font-size:16px;}
+
+  /* url box (どこにURLが出るか図解) */
+  .urlbox{display:flex; align-items:center; gap:8px; background:#0f172a; color:#cbd5e1; border-radius:12px; padding:10px 12px; margin-top:10px; font-family:ui-monospace,Menlo,monospace; font-size:12px;}
+  .urlbox .u{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .urlbox .u b{color:#fde047;}
+  .urlbox .cp{flex:0 0 auto; background:var(--blue); color:#fff; border-radius:8px; padding:6px 10px; font-weight:800; font-size:12px; white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -144,9 +150,19 @@
   <div class="step prep">
     <div class="num">6</div><div class="ic">🔗</div>
     <div class="body">
-      <div class="t">URLをアプリに貼る</div>
-      <div class="d">出てきた長いURLをコピー → アプリ①画面の「⚙ メール送信の設定」に貼る → <b>「保存」を押す</b></div>
-      <div class="call ok"><span class="ci">🎉</span><div>保存のあと<b>「接続テスト」</b>を押して<b>自分のメール</b>が出たら準備完了！<br>（他人のメールが出たらURLが間違い）</div></div>
+      <div class="t">URLをコピーする</div>
+      <div class="d">デプロイ直後に出る画面に<b>長いURL</b>がある。末尾が <b>/exec</b>。右の📋でコピー</div>
+      <div class="urlbox"><span class="u">https://script.google.com/…/<b>exec</b></span><span class="cp">📋 コピー</span></div>
+      <div class="call warn"><span class="ci">🔍</span><div>画面を閉じちゃったら → 右上「デプロイ」→「<b>デプロイを管理</b>」でまた出せる</div></div>
+    </div>
+  </div>
+
+  <div class="step prep">
+    <div class="num">7</div><div class="ic">📥</div>
+    <div class="body">
+      <div class="t">アプリに貼って保存</div>
+      <div class="d">アプリ①画面の「⚙ メール送信の設定」を開く → URLを貼る → <b>「保存」</b></div>
+      <div class="call ok"><span class="ci">🎉</span><div>そのあと<b>「接続テスト」</b>で<b>自分のメール</b>が出たら準備完了！<br>（他人のメールならURLが間違い）</div></div>
     </div>
   </div>
 
