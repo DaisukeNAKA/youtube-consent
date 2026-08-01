@@ -64,7 +64,9 @@ with a Japanese, non-technical error message, or not fail at all. Never surface 
 | `sw.js` | 24 | Service worker (cache `consent-v1`) | Pages, auto |
 | `apps-script/Code.gs` | 206 | Mail backend, v2.1.1 | **MANUAL** (see §7) |
 | `apps-script/README.md` | 115 | GAS setup runbook (human-facing) | docs only |
-| `README.md` | 39 | Repo overview | docs only |
+| `README.md` | 44 | Repo overview | docs only |
+| `tests/smoke.html` | 126 | Browser smoke test: consent gates + adult/minor certificate rendering | Pages (localhost-only guard) |
+| `.github/workflows/smoke.yml` | 56 | Dependency-free headless-Chrome CI | GitHub Actions |
 
 ### 3.1 index.html anchor map (line numbers as of HEAD `879e147`; re-grep before editing)
 
@@ -325,7 +327,17 @@ for (const age of ['adult','minor']) {
 ```
 Camera and geolocation require HTTPS or `localhost`. Real-device testing needs a tunnel or Pages.
 
-### 8.4 Verify backend live
+### 8.4 Automated frontend smoke
+```bash
+python3 -m http.server 8791 --bind 127.0.0.1 --directory /Users/nakatsukadaisuke/youtube-consent
+# open http://127.0.0.1:8791/tests/smoke.html
+```
+`tests/smoke.html` runs only on `localhost` / `127.0.0.1` and checks consent read-through/no-overflow
+unlocking, the minor guardian-name gate, and the §8.3 adult/minor seal assertions. The GitHub Actions workflow
+`.github/workflows/smoke.yml` runs the same page in headless Chrome on every push and pull request.
+It adds no runtime dependency or build step to the app.
+
+### 8.5 Verify backend live
 ```bash
 curl -s -L "<exec>"                                            # → ok:true, version, masked owner
 curl -s -L -X POST -H 'Content-Type: text/plain' \
@@ -358,6 +370,9 @@ curl -s -L -X POST -H 'Content-Type: text/plain' \
 - **D6 — `maximum-scale=1,user-scalable=no`: REMOVED.** Consent text must be zoomable.
 - **D7 — full-project adversarial review** (2026-07, 60 parallel agents, 53 findings, 49 confirmed)
   produced the current hardened state. Its fixes are in commit `22d71bf`.
+- **D8 — dependency-free browser smoke CI: ADDED.** `tests/smoke.html` exercises the consent gates
+  and renders both adult/minor certificates in the real browser. GitHub Actions uses the Chrome
+  already installed on the runner; no npm package, build system, or app runtime dependency was added.
 
 ---
 
@@ -367,7 +382,6 @@ curl -s -L -X POST -H 'Content-Type: text/plain' \
 |---|---|---|---|
 | B1 | Watermark vs certificate place text can disagree | `burnWatermark` 461 / `fmtPlace` 412 | Photo burns whatever is known at shutter (often coords only); the certificate/email may show the address resolved seconds later. Evidentially harmless but inconsistent. Options: burn coords in both, or re-render the watermark after resolution (needs keeping the raw frame). |
 | B2 | Safari 7-day storage eviction | `localStorage["mailEndpoint"]` 245 | If unused for 7 days, iOS may evict → mail silently stops (UI does say "未設定"). Consider also persisting in a cookie or prompting a re-test on load. |
-| B3 | No automated tests / CI | — | All verification is manual (§8.3). A headless-Chrome smoke test of `buildCertificate` + the step gates would catch the highest-value regressions. |
 | B4 | Author email remains in git history | commits before `22d71bf` | HEAD is clean. History rewrite intentionally not done (public repo, forks/clones). |
 | B5 | QR quiet zone is 2 modules (spec: 4) | `guide.html` inline SVG | Verified scannable (jsQR decode OK). Cosmetic/robustness only. |
 | B6 | Consent text is a non-lawyer template | `index.html:125-134` (clause 6 = privacy/disclosure @132) | Owner has been told repeatedly to get legal review. Do not represent it as vetted. |

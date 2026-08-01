@@ -29,10 +29,15 @@ YouTube等の撮影現場で、一般出演者の出演許諾を電子的に回�
 - `sw.js` … オフライン対策のService Worker（電波の無い現場でもアプリを開ける）。
 - `apps-script/Code.gs` … メール送信バックエンド（Google Apps Script ウェブアプリ）。**使う人が各自デプロイ**（`OWNER_EMAIL` に自分のメールを1行記入。未設定なら誤配せずエラーで安全に停止）。
 - `apps-script/README.md` … バックエンドの設定手順とセキュリティ。
+- `tests/smoke.html` … 同意ゲートと成人・未成年の証票描画を実ブラウザで確認するスモークテスト（ローカル専用）。
+- `.github/workflows/smoke.yml` … push時にスモークテストを自動実行するGitHub Actions。
 
 ## 更新方法
 - フロント（文面・UI）: `index.html` を編集して `git push` → GitHub Pagesに数十秒〜1分で自動反映。
 - メール（`Code.gs`）: 編集後、Apps Scriptで「デプロイを管理 → 編集 → 新バージョン → デプロイ」で再公開（`/exec` URLは不変）。
+
+## 開発者向け確認
+`python3 -m http.server 8791 --bind 127.0.0.1` で起動し、`http://127.0.0.1:8791/tests/smoke.html` を開きます。結果がJSONで表示され、`stepGates` が `pass`、成人・未成年の `mustBeZero` が `0`、`mustBeNonZero` が `0` より大きければ合格です。push時にも同じ検査が自動実行されます。
 
 ## 注意
 - カメラ・位置情報はHTTPS（本番URL）でのみ動作します。

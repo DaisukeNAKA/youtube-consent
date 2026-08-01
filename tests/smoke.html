@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>出演許諾アプリ スモークテスト</title>
+<style>
+  iframe{position:absolute;left:-10000px;top:0;width:390px;height:844px;border:0}
+  body{font-family:monospace;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<iframe id="app" title="テスト対象"></iframe>
+<pre id="result">検査中…</pre>
+<script>
+"use strict";
+const result = document.querySelector("#result");
+const frame = document.querySelector("#app");
+
+function finish(status, message){
+  document.documentElement.dataset.status = status;
+  result.textContent = message;
+}
+
+if(!["127.0.0.1", "localhost"].includes(location.hostname)){
+  finish("disabled", "この検査ページはローカル環境でのみ実行できます。");
+}else{
+  frame.addEventListener("load", async ()=>{
+    try{
+      const report = await frame.contentWindow.eval(`(async () => {
+        const assert = (condition, message)=>{ if(!condition) throw new Error(message); };
+        const fireInput = element=>element.dispatchEvent(new Event('input',{bubbles:true}));
+        const unlockConsent = ()=>{
+          const consentDoc=document.querySelector('#doc');
+          consentDoc.scrollTop=consentDoc.scrollHeight;
+          consentDoc.dispatchEvent(new Event('scroll'));
+        };
+        const stub = (w,h,color,label)=>{
+          const canvas=document.createElement('canvas');
+          canvas.width=w; canvas.height=h;
+          const context=canvas.getContext('2d');
+          context.fillStyle=color; context.fillRect(0,0,w,h);
+          context.fillStyle='#000'; context.font='40px sans-serif'; context.fillText(label,20,60);
+          return canvas.toDataURL();
+        };
+        const redRatio = (context,width,y0,y1)=>{
+          const pixels=context.getImageData(0,y0,width,y1-y0).data;
+          let red=0,total=0;
+          for(let i=0;i<pixels.length;i+=4){
+            total++;
+            if(pixels[i]>180&&pixels[i+1]<80&&pixels[i+2]<90) red++;
+          }
+          return red/total;
+        };
+
+        const savedEndpoint=localStorage.getItem('mailEndpoint');
+        localStorage.removeItem('mailEndpoint');
+        try{
+          resetAll();
+          const next=document.querySelector('#nextBtn');
+          assert(!state.scrolledEnd, '同意文面を読む前に確認済みになっています');
+          assert(next.disabled, '同意前に次へ進めます');
+          assert(!document.querySelector('#chkWrap').classList.contains('enabled'), '同意欄が早く解放されています');
+
+          unlockConsent();
+          assert(state.scrolledEnd, '末尾まで読んでも同意欄が解放されません');
+          document.querySelector('[data-age="adult"]').click();
+          document.querySelector('#agree').click();
+          assert(!next.disabled, '成人の同意完了後も次へ進めません');
+
+          resetAll();
+          const fittingDoc=document.querySelector('#doc');
+          fittingDoc.style.height=(fittingDoc.scrollHeight+20)+'px';
+          checkDocEnd();
+          assert(state.scrolledEnd, '文面が枠内に収まる画面で同意欄が解放されません');
+          fittingDoc.style.height='';
+
+          resetAll();
+          unlockConsent();
+          document.querySelector('[data-age="minor"]').click();
+          document.querySelector('#agree').click();
+          next.click();
+          const name=document.querySelector('#name');
+          const guardian=document.querySelector('#guardian');
+          name.value='山田 太郎'; fireInput(name);
+          assert(next.disabled, '未成年で保護者氏名がなくても次へ進めます');
+          guardian.value='山田 花子'; fireInput(guardian);
+          assert(!next.disabled, '未成年で必須氏名を入力しても次へ進めません');
+
+          const certificates=[];
+          for(const age of ['adult','minor']){
+            Object.assign(state,{
+              photo:stub(1080,1440,'#9ab','P'),
+              signature:stub(600,230,'#fff','S'),
+              name:'山田 太郎',age,guardian:'山田 花子',relation:'母',when:new Date(),
+              geo:{lat:35.6812,lng:139.7671,acc:12,address:'東京都千代田区丸の内一丁目'},
+              id:'CONSENT-TEST'
+            });
+            await buildCertificate();
+            const image=document.querySelector('#resultImg');
+            await new Promise(resolve=>image.complete&&image.naturalWidth?resolve():image.onload=resolve);
+            const canvas=document.createElement('canvas');
+            canvas.width=image.naturalWidth; canvas.height=image.naturalHeight;
+            const context=canvas.getContext('2d'); context.drawImage(image,0,0);
+            const bottom=redRatio(context,canvas.width,canvas.height-30,canvas.height);
+            const seal=redRatio(context,canvas.width,canvas.height-260,canvas.height-60);
+            assert(bottom===0, age+'証票の朱印が下端に接しています');
+            assert(seal>0, age+'証票に朱印がありません');
+            certificates.push({age,H:canvas.height,mustBeZero:bottom,mustBeNonZero:seal});
+          }
+
+          return {stepGates:'pass',certificates};
+        }finally{
+          if(savedEndpoint===null) localStorage.removeItem('mailEndpoint');
+          else localStorage.setItem('mailEndpoint',savedEndpoint);
+        }
+      })()`);
+      finish("pass", JSON.stringify(report));
+    }catch(error){
+      finish("fail", "検査失敗: "+error.message);
+    }
+  });
+  frame.src="../index.html";
+}
+</script>
+</body>
+</html>
