@@ -50,7 +50,7 @@
 1. 「アクセスを承認」→ 自分のGoogleアカウントを選択
 2. 「このアプリは Google で確認されていません」と出たら
    → 「**詳細**」→「**（プロジェクト名）に移動**」→「**許可**」
-   （自分で作ったスクリプトなので安全です）
+   貼り付けた最新版の `Code.gs` と、自分で作成したプロジェクト名であることを確認してから許可してください。
 
 ### 5. URLをコピーしてアプリに登録
 1. 表示された「**ウェブアプリのURL**」（`https://script.google.com/macros/s/……/exec`）をコピー
@@ -71,11 +71,18 @@
 ## レスポンス仕様（フロントと整合）
 - 送信成功: `{"ok":true,"status":"sent","message":"operator copy sent","owner":"〇〇***@gmail.com"}`
 - 冪等（送信済み）: `{"ok":true,"status":"already_sent","message":"operator copy already sent","owner":"..."}`
-- 疎通確認(GET): `{"ok":true,"status":"ready","version":"2.1.1","owner":"〇〇***@gmail.com"}`
+- 疎通確認(GET): `{"ok":true,"status":"ready","version":"2.2.0","owner":"〇〇***@gmail.com"}`
 - エラー: `{"ok":false,"code":"<コード>","message":"<説明>"}`
-  （コード例: `unauthorized` / `no_image` / `bad_request` / `no_body` / `busy` / `daily_limit` / `quota_exceeded` / `not_configured` / `server_error`）
+  （コード例: `unauthorized` / `no_image` / `image_too_large` / `invalid_id` / `invalid_field` / `hash_mismatch` / `id_conflict` / `bad_request` / `no_body` / `busy` / `daily_limit` / `quota_exceeded` / `not_configured` / `server_error`）
 
-## 過去の版からの更新（v2.1.1）
+## 過去の版からの更新（v2.2.0）
+- 証票ID・入力長・画像サイズ・画像実体をメール送信前に検証
+- 無効な要求をロック取得前に拒否し、空IDによる冪等化回避と不正な記録キーの蓄積を防止
+- 添付PNGのSHA-256をサーバ側で再計算し、控えメール本文へ記録（保存後の画像照合用）
+- 成人証票では、保護者情報が送られてきても破棄
+- 内部エラーの詳細を利用者へ返さず、日本語の固定メッセージだけを表示
+
+### v2.1.1で追加された安全策
 - `OWNER_EMAIL` の既定が空になり、**未設定なら誤配せず `not_configured` エラーで安全に停止**する方式に
   （旧版は既定に作者のメールが入っており、変更忘れで他人に証票が届く事故経路があった）
 - タイプミス防止の `setup` 関数を追加（エディタで1回実行すると自分のアドレスを自動登録）
@@ -104,7 +111,10 @@ Apps Scriptは、**「デプロイ」→「デプロイを管理」→ 鉛筆✏
 - **合言葉（SHARED_TOKEN）**: 無差別なbotを弾く。
 - **冪等化**: 同じ証票IDは二重送信しない（再送しても重複しません）。
 - **日次上限（DAILY_CAP）＋ Gmail残枠チェック**: 万一乱用されても、あなたの通常メールが送れなくなる事態を防ぐ。
-- **同時実行の直列化（LockService）**、**dataURL形式検証**、**添付ファイル名の安全化**、**code/message形式のエラー返却**。
+- **同時実行の直列化（LockService）**、**ID・入力長・画像サイズ・画像実体の検証**、**添付ファイル名の安全化**、**code/message形式のエラー返却**。
+- **添付PNGのSHA-256**: GASが画像から再計算し、控えメールへ記録。保存したPNGの改変有無を元メールと照合できます。
+
+> SHA-256は「メールで受け取った画像から変わっていないか」を確認するためのものです。出演者本人の身元や、法的有効性を自動保証するものではありません。
 
 **残る（限定的な）リスクと運用**:
 - 第三者がトークンを知ると、あなたの受信箱に最大 `DAILY_CAP` 通/日のスパムを送り込める可能性はあります

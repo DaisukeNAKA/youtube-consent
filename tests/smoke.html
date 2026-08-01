@@ -86,16 +86,70 @@ if(!["127.0.0.1", "localhost"].includes(location.hostname)){
           guardian.value='山田 花子'; fireInput(guardian);
           assert(!next.disabled, '未成年で必須氏名を入力しても次へ進めません');
 
+          const relation=document.querySelector('#relation');
+          relation.value='母'; fireInput(relation);
+          state.guardian='山田 花子'; state.relation='母';
+          document.querySelector('[data-age="adult"]').click();
+          assert(guardian.value===''&&relation.value==='', '成人へ変更しても保護者入力が残っています');
+          assert(state.guardian===''&&state.relation==='', '成人へ変更しても保護者情報がstateに残っています');
+
+          state.step=4; show(4);
+          await new Promise(resolve=>setTimeout(resolve,80));
+          const sig=document.querySelector('#sig');
+          const sigRect=sig.getBoundingClientRect();
+          sig.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:sigRect.left+20,clientY:sigRect.top+20}));
+          window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,clientX:sigRect.left+20,clientY:sigRect.top+20}));
+          assert(!state.signature, '線を引かないタップが署名として受理されます');
+          assert(next.disabled, '空署名で証票作成へ進めます');
+          sig.dispatchEvent(new MouseEvent('mousedown',{bubbles:true,clientX:sigRect.left+20,clientY:sigRect.top+20}));
+          sig.dispatchEvent(new MouseEvent('mousemove',{bubbles:true,clientX:sigRect.left+70,clientY:sigRect.top+45}));
+          window.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,clientX:sigRect.left+70,clientY:sigRect.top+45}));
+          assert(!!state.signature, '線を引いた署名を受理できません');
+          window.dispatchEvent(new Event('resize'));
+          show(2);
+          await new Promise(resolve=>setTimeout(resolve,80));
+          assert(!state.signature, '署名画面を離れた後に古い署名が非同期復元されます');
+          invalidateCapturedEvidence();
+          assert(!state.signature&&!state.photo&&!state.cert, '撮影コンテキスト変更後も旧署名・証票が残っています');
+
+          state.when=new Date();
+          state.geo={lat:35.6812,lng:139.7671,acc:12,address:'<b id="network-html-marker">危険</b>'};
+          updateLiveStamp();
+          assert(!document.querySelector('#network-html-marker'), '位置情報表示がHTMLとして解釈されます');
+          const sourceGeo=state.geo;
+          freezeCaptureContext();
+          const frozenLat=state.geo.lat;
+          sourceGeo.lat=0;
+          assert(state.geo!==sourceGeo&&state.geo.lat===frozenLat, '撮影後も位置情報が非同期に変更されます');
+          assert(/^CONSENT-\\d{8}-[A-F0-9]{16}$/.test(state.id), '証票IDが暗号学的乱数の新形式ではありません');
+
+          Object.assign(state,{age:'adult',guardian:'残存情報',relation:'母',photo:stub(40,40,'#fff','P'),signature:stub(40,20,'#fff','S'),
+            name:'山田 太郎',when:new Date(),geo:{lat:35.6812,lng:139.7671,acc:12},id:'CONSENT-20260801-0123456789ABCDEF',
+            consentHash:'a'.repeat(64),evidenceHash:'b'.repeat(64),certHash:'c'.repeat(64),cert:stub(40,40,'#fff','C')});
+          const payload=mailPayload();
+          assert(payload.guardianName===''&&payload.guardianRelation==='', '成人payloadに保護者情報が含まれます');
+          ['to','cc','bcc','recipients','participantEmail','guardianEmail'].forEach(key=>assert(!(key in payload),'宛先フィールド '+key+' がpayloadにあります'));
+
+          Object.assign(state,{photo:'not-an-image',signature:'not-an-image',when:new Date(),id:'CONSENT-20260801-0123456789ABCDEF'});
+          show(5);
+          await new Promise(resolve=>setTimeout(resolve,120));
+          assert(!document.querySelector('#buildError').hidden, '証票生成失敗時の復帰案内が表示されません');
+          assert(!document.querySelector('#retryBuild').hidden&&!document.querySelector('#backToSignature').hidden, '証票生成失敗から復帰できません');
+
           const certificates=[];
           for(const age of ['adult','minor']){
             Object.assign(state,{
               photo:stub(1080,1440,'#9ab','P'),
               signature:stub(600,230,'#fff','S'),
               name:'山田 太郎',age,guardian:'山田 花子',relation:'母',when:new Date(),
-              geo:{lat:35.6812,lng:139.7671,acc:12,address:'東京都千代田区丸の内一丁目'},
+              geo:{lat:35.6812,lng:139.7671,acc:12},
               id:'CONSENT-TEST'
             });
             await buildCertificate();
+            assert(document.querySelector('#buildError').hidden&&document.querySelector('#buildStat').hidden, age+'証票生成後もエラー表示が残っています');
+            assert(/^[a-f0-9]{64}$/.test(state.consentHash), age+'証票に同意文面ハッシュがありません');
+            assert(/^[a-f0-9]{64}$/.test(state.evidenceHash), age+'証票に証跡ハッシュがありません');
+            assert(/^[a-f0-9]{64}$/.test(state.certHash), age+'証票PNGハッシュがありません');
             const image=document.querySelector('#resultImg');
             await new Promise(resolve=>image.complete&&image.naturalWidth?resolve():image.onload=resolve);
             const canvas=document.createElement('canvas');
@@ -108,7 +162,7 @@ if(!["127.0.0.1", "localhost"].includes(location.hostname)){
             certificates.push({age,H:canvas.height,mustBeZero:bottom,mustBeNonZero:seal});
           }
 
-          return {stepGates:'pass',certificates};
+          return {stepGates:'pass',securityAndEvidence:'pass',certificates};
         }finally{
           if(savedEndpoint===null) localStorage.removeItem('mailEndpoint');
           else localStorage.setItem('mailEndpoint',savedEndpoint);
@@ -119,7 +173,7 @@ if(!["127.0.0.1", "localhost"].includes(location.hostname)){
       finish("fail", "検査失敗: "+error.message);
     }
   });
-  frame.src="../index.html";
+  frame.src="../index.html?smoke="+Date.now();
 }
 </script>
 </body>

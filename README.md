@@ -7,9 +7,9 @@ YouTube等の撮影現場で、一般出演者の出演許諾を電子的に回�
 ## 現場フロー
 1. **① 確認** — 同意文面を最後までスクロールして同意を解放。本人(18歳以上)／18歳未満の区分を選択。
 2. **② 氏名** — 出演者名（未成年なら保護者名・続柄）。
-3. **③ 撮影** — その場で撮影。撮影日時・GPS住所/座標を可視透かしで焼き込み。
+3. **③ 撮影** — その場で撮影。撮影日時・GPS座標を可視透かしで焼き込み。
 4. **④ 署名** — 指で署名。
-5. **⑤ 完了** — 「同意済」朱印付きの証票PNGを生成 → 保存／共有／**運営者控えメール送信**。
+5. **⑤ 完了** — 同意文面版・証跡SHA-256・「同意済」朱印付きの証票PNGを生成 → 保存／共有／**運営者控えメール送信**。控えメールにはGASが再計算した添付PNGのSHA-256も記録。
 
 ## メール送信（運営者控えのみ送信モード）
 証票PNGは **設定した本人にのみ** メール送信されます。**出演者・保護者/署名者には自動送信されません**（メールアドレスも取得しません）。
@@ -30,15 +30,20 @@ YouTube等の撮影現場で、一般出演者の出演許諾を電子的に回�
 - `apps-script/Code.gs` … メール送信バックエンド（Google Apps Script ウェブアプリ）。**使う人が各自デプロイ**（`OWNER_EMAIL` に自分のメールを1行記入。未設定なら誤配せずエラーで安全に停止）。
 - `apps-script/README.md` … バックエンドの設定手順とセキュリティ。
 - `tests/smoke.html` … 同意ゲートと成人・未成年の証票描画を実ブラウザで確認するスモークテスト（ローカル専用）。
-- `.github/workflows/smoke.yml` … push時にスモークテストを自動実行するGitHub Actions。
+- `.github/workflows/smoke.yml` … push時に静的な不変条件・GAS・Chrome・Safariのスモークテストを自動実行するGitHub Actions。
 
 ## 更新方法
 - フロント（文面・UI）: `index.html` を編集して `git push` → GitHub Pagesに数十秒〜1分で自動反映。
 - メール（`Code.gs`）: 編集後、Apps Scriptで「デプロイを管理 → 編集 → 新バージョン → デプロイ」で再公開（`/exec` URLは不変）。
 
 ## 開発者向け確認
-`python3 -m http.server 8791 --bind 127.0.0.1` で起動し、`http://127.0.0.1:8791/tests/smoke.html` を開きます。結果がJSONで表示され、`stepGates` が `pass`、成人・未成年の `mustBeZero` が `0`、`mustBeNonZero` が `0` より大きければ合格です。push時にも同じ検査が自動実行されます。
+`node tests/invariants.test.js && node tests/backend.test.js` を実行後、`python3 -m http.server 8791 --bind 127.0.0.1` で起動し、`http://127.0.0.1:8791/tests/smoke.html` を開きます。`stepGates` と `securityAndEvidence` が `pass`、成人・未成年の `mustBeZero` が `0`、`mustBeNonZero` が `0` より大きければ合格です。push時はSafariを含めて自動検査します。
 
 ## 注意
 - カメラ・位置情報はHTTPS（本番URL）でのみ動作します。
+- 位置情報は証票へGPS座標として記録します。住所変換サービスなど第三者へは送信しません。
 - 同意文面は編集用のテンプレートです。実運用前に弁護士確認を推奨します。
+
+## ライセンス
+
+[MIT License](LICENSE)

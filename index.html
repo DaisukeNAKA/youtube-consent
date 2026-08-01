@@ -16,7 +16,7 @@
     line-height:1.6; overscroll-behavior:none;}
   .app{max-width:560px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column;}
   header{position:sticky; top:0; z-index:5; background:rgba(15,17,21,.92);
-    backdrop-filter:blur(8px); padding:14px 16px calc(14px + env(safe-area-inset-top)); border-bottom:1px solid var(--line);}
+    backdrop-filter:blur(8px); padding:calc(14px + env(safe-area-inset-top)) 16px 14px; border-bottom:1px solid var(--line);}
   .title{font-size:16px; font-weight:700; letter-spacing:.02em;}
   .steps{display:flex; gap:6px; margin-top:10px;}
   .steps .dot{flex:1; height:4px; border-radius:99px; background:var(--line);}
@@ -98,19 +98,26 @@
 
   /* result */
   .result img{width:100%; border-radius:14px; border:1px solid var(--line); display:block;}
+  .result img:not([src]){display:none;}
   .meta{font-size:12px; color:var(--sub); margin-top:12px; word-break:break-all;}
+  .meta{white-space:pre-wrap;}
+  .statusnote{margin:10px 0 0; padding:10px 12px; border-radius:10px; font-size:12px;
+    border:1px solid var(--line); color:var(--sub); background:#12151c;}
+  .statusnote.ok{border-color:var(--ok); color:#bbf7d0; background:rgba(34,197,94,.10);}
+  .statusnote.warn{border-color:var(--danger); color:#fecaca; background:rgba(239,68,68,.10);}
   .toast{position:fixed; left:50%; bottom:96px; transform:translateX(-50%); background:#000; color:#fff;
     padding:10px 16px; border-radius:99px; font-size:13px; opacity:0; transition:.3s; z-index:50; pointer-events:none;}
   .toast.show{opacity:.95;}
   .warn{background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.4); color:#fecaca;
     border-radius:12px; padding:10px 12px; font-size:12px; margin-top:12px;}
+  [hidden]{display:none !important;}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <div class="title">出演許諾 証票作成</div>
-    <div class="steps" id="steps">
+    <div class="steps" id="steps" role="progressbar" aria-label="入力の進み具合" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1">
       <div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
     </div>
   </header>
@@ -120,7 +127,7 @@
     <section class="screen active" id="s1">
       <h2>① 同意内容の確認</h2>
       <p class="hint">最後までスクロールすると同意できます。</p>
-      <div class="doc" id="doc">
+      <div class="doc" id="doc" tabindex="0" aria-label="出演許諾の同意書">
         <!-- ▼▼▼ ここの文面は弁護士確認のうえ自由に編集してください ▼▼▼ -->
         <h3>YouTube等への出演・公開に関する同意書</h3>
         <p>私は、撮影者（以下「運営者」）が運営するYouTubeチャンネルおよび関連する動画コンテンツへの出演について、以下の内容を理解し、同意します。</p>
@@ -129,39 +136,41 @@
         <p><b>3. 編集・二次利用</b><br>運営者が本コンテンツを編集・加工し、切り抜き・サムネイル・広告・宣伝素材等に二次利用することに同意します。</p>
         <p><b>4. 期間・地域</b><br>本同意は期間・地域の定めなく有効とし、公開後の削除義務を運営者は負わないことを理解します。</p>
         <p><b>5. 無償</b><br>本コンテンツの利用について、原則として対価の支払いがないことを理解し、これに同意します。</p>
-        <p><b>6. 個人情報・記録の保管</b><br>本証票に記録される氏名・写真（容貌）・署名・撮影日時・位置情報が、出演同意の証跡として運営者に送信・保管され、その目的にのみ利用されることに同意します。位置情報を住所として表示するため、緯度経度が地図サービス（OpenStreetMap Nominatim）へ送信されます（氏名等は送信されません）。証票は運営者の記録用としてのみ送信され、出演者・保護者/署名者へ自動でメール送信されることはありません（メールアドレスは取得しません）。控えが必要な場合は、運営者が保存済みの証票を個別にお渡しします。</p>
+        <p><b>6. 個人情報・記録の保管</b><br>本証票に記録される氏名・写真（容貌）・署名・撮影日時・GPS座標が、出演同意の証跡として運営者に送信・保管され、その目的にのみ利用されることに同意します。GPS座標を住所へ変換する外部サービスには送信しません。証票は運営者の記録用としてのみ送信され、出演者・保護者/署名者へ自動でメール送信されることはありません（メールアドレスは取得しません）。控えが必要な場合は、運営者が保存済みの証票を個別にお渡しします。</p>
         <p><b>7. 撤回について</b><br>公開前であれば撤回を申し出ることができますが、公開後の拡散済みコンテンツについては技術的に削除できない場合があることを理解します。</p>
         <p>私は上記すべてを一読し、内容を理解したうえで、自らの意思で出演を許諾します。</p>
         <!-- ▲▲▲ 文面ここまで ▲▲▲ -->
-        <div class="end" id="docEnd">― 以上を確認しました ―</div>
+        <div class="end" id="docEnd">― 以上を確認しました（文面版: 2026-08-01.1）―</div>
       </div>
       <div class="scrollnote" id="scrollnote" aria-live="polite">⬇ 最後までスクロールしてください</div>
 
       <div class="card" style="margin-top:8px">
         <div style="font-size:13px; color:var(--sub); margin-bottom:8px">出演者の区分</div>
-        <div class="seg" id="ageSeg">
-          <button data-age="adult">本人（18歳以上）</button>
-          <button data-age="minor">18歳未満</button>
+        <div class="seg" id="ageSeg" role="group" aria-label="出演者の区分">
+          <button type="button" data-age="adult" aria-pressed="false">本人（18歳以上）</button>
+          <button type="button" data-age="minor" aria-pressed="false">18歳未満</button>
         </div>
       </div>
 
       <label class="chk" id="chkWrap">
-        <input type="checkbox" id="agree">
+        <input type="checkbox" id="agree" disabled>
         <span>上記の同意書を最後まで読み、内容を理解したうえで出演を許諾します。</span>
       </label>
 
       <details class="admin">
         <summary>⚙ メール送信の設定（この端末の控え先）</summary>
-        <label class="field">あなたのApps Script ウェブアプリURL（/exec）</label>
-        <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
-        <p class="fieldnote">各自が自分のApps Scriptを設定します。<b>デプロイした本人のGmailにだけ</b>証票の控えが届きます（送信先はApps Script側で固定＝他人には送れません）。この端末にのみ保存。空欄なら送信しません。設定手順は <a href="guide.html" target="_blank" style="color:var(--accent)">かんたんガイド</a> を参照。</p>
+        <label class="field" for="endpointInput">あなたのApps Script ウェブアプリURL（/exec）</label>
+        <input type="url" id="endpointInput" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" inputmode="url">
+        <p class="fieldnote">各自が自分のApps Scriptを設定します。<b>デプロイした本人のGmailにだけ</b>証票の控えが届きます（送信先はApps Script側で固定＝他人には送れません）。Safariの保存データ消去に備え、URLは自分だけが見られるメモにも控えてください。空欄なら送信しません。設定手順は <a href="guide.html" target="_blank" rel="noopener" style="color:var(--accent)">かんたんガイド</a> を参照。</p>
         <div style="display:flex; gap:8px; margin-top:2px;">
-          <button class="savebtn" id="saveEndpoint">保存</button>
-          <button class="savebtn" id="testEndpoint" style="background:transparent; border:1px solid var(--line); color:var(--txt);">接続テスト</button>
+          <button type="button" class="savebtn" id="saveEndpoint">保存</button>
+          <button type="button" class="savebtn" id="testEndpoint" style="background:transparent; border:1px solid var(--line); color:var(--txt);">接続テスト</button>
+          <button type="button" class="savebtn" id="copyEndpoint" style="background:transparent; border:1px solid var(--line); color:var(--txt);">URLをコピー</button>
         </div>
         <span id="endpointSaved" style="display:block; font-size:12px; color:var(--ok); margin-top:8px;"></span>
-        <div id="endpointOwner" style="font-size:13px; margin-top:6px;"></div>
+        <div id="endpointOwner" style="font-size:13px; margin-top:6px;" aria-live="polite"></div>
       </details>
+      <div id="endpointNotice" class="statusnote" role="status"></div>
     </section>
 
     <!-- 2. 氏名 -->
@@ -169,13 +178,13 @@
       <h2>② 氏名の入力</h2>
       <p class="hint">出演者ご本人のお名前を入力してください。</p>
       <div class="card">
-        <label class="field">出演者氏名</label>
-        <input type="text" id="name" placeholder="例）山田 太郎" autocomplete="off">
+        <label class="field" for="name">出演者氏名</label>
+        <input type="text" id="name" placeholder="例）山田 太郎" autocomplete="off" maxlength="80">
         <div id="guardianBlock" style="display:none">
-          <label class="field">保護者氏名（18歳未満のため必須）</label>
-          <input type="text" id="guardian" placeholder="例）山田 花子" autocomplete="off">
-          <label class="field">続柄</label>
-          <input type="text" id="relation" placeholder="例）母" autocomplete="off">
+          <label class="field" for="guardian">保護者氏名（18歳未満のため必須）</label>
+          <input type="text" id="guardian" placeholder="例）山田 花子" autocomplete="off" maxlength="80">
+          <label class="field" for="relation">続柄</label>
+          <input type="text" id="relation" placeholder="例）母" autocomplete="off" maxlength="30">
         </div>
         <p class="fieldnote">メールアドレスは取得しません。証票は運営者の記録用としてのみ送信され、出演者・保護者/署名者には送信されません。</p>
       </div>
@@ -184,30 +193,30 @@
     <!-- 3. 撮影 -->
     <section class="screen" id="s3">
       <h2>③ 撮影</h2>
-      <p class="hint">出演者を撮影します。日時・位置情報が写真に焼き込まれます。</p>
-      <div class="videowrap" id="videowrap">
+      <p class="hint">出演者を撮影します。撮影日時・GPS座標が写真に焼き込まれます。</p>
+      <div class="videowrap" id="videowrap" aria-label="撮影プレビュー">
         <video id="video" playsinline muted autoplay></video>
         <canvas class="preview" id="photoPreview" style="display:none"></canvas>
         <div class="stamp-on-photo" id="liveStamp"></div>
       </div>
-      <div class="warn" id="camWarn" style="display:none"></div>
+      <div class="warn" id="camWarn" style="display:none" role="alert"></div>
       <div class="cambtns">
-        <button class="btn ghost" id="switchCam">⟲ カメラ切替</button>
-        <button class="btn" id="shoot">撮影する</button>
-        <button class="btn ghost" id="retake" style="display:none">撮り直し</button>
+        <button type="button" class="btn ghost" id="switchCam">⟲ カメラ切替</button>
+        <button type="button" class="btn" id="shoot">撮影する</button>
+        <button type="button" class="btn ghost" id="retake" style="display:none">撮り直し</button>
       </div>
     </section>
 
     <!-- 4. 署名 -->
     <section class="screen" id="s4">
       <h2>④ 署名</h2>
-      <p class="hint">枠内に指でサインしてください。</p>
+      <p class="hint" id="sigHelp">枠内に指で、線を引くようにサインしてください。</p>
       <div class="sigwrap">
-        <canvas class="sig" id="sig"></canvas>
+        <canvas class="sig" id="sig" aria-label="署名欄" aria-describedby="sigHelp"></canvas>
         <div class="sigph" id="sigph">ここに署名</div>
       </div>
       <div class="cambtns">
-        <button class="btn ghost" id="sigClear">消去</button>
+        <button type="button" class="btn ghost" id="sigClear">消去</button>
       </div>
     </section>
 
@@ -217,6 +226,14 @@
       <p class="hint">証票PNGを<b>運営者控えとして</b>メール送信します。出演者・保護者/署名者には送信されません。必要な場合は運営者が保存済み証票を個別に共有してください。</p>
       <div class="result">
         <img id="resultImg" alt="証票">
+        <div id="buildStat" class="mailstat send" role="status">証票を作成しています…</div>
+        <div id="buildError" class="warn" role="alert" hidden>
+          証票を作成できませんでした。もう一度試すか、署名画面へ戻ってやり直してください。
+          <div class="cambtns">
+            <button type="button" class="btn small" id="retryBuild">もう一度試す</button>
+            <button type="button" class="btn ghost small" id="backToSignature">署名へ戻る</button>
+          </div>
+        </div>
         <div class="mailstat" id="mailStat" style="display:none" aria-live="polite"></div>
         <div class="meta" id="resultMeta"></div>
       </div>
@@ -224,24 +241,25 @@
   </main>
 
   <div class="bar" id="bar">
-    <button class="btn ghost" id="backBtn" style="display:none">戻る</button>
-    <button class="btn" id="nextBtn" disabled>次へ</button>
+    <button type="button" class="btn ghost" id="backBtn" style="display:none">戻る</button>
+    <button type="button" class="btn" id="nextBtn" disabled>次へ</button>
   </div>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
 const $ = s => document.querySelector(s);
 // オフライン対策（地下ライブハウス等）: 本番HTTPSのみでキャッシュを有効化
 if("serviceWorker" in navigator && location.protocol==="https:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
-const esc = s => String(s??"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* ===== メール送信の設定 ===== */
 // 既定のApps Script URL（空の場合は端末の設定 or 未送信）。運用で固定したい場合はここに /exec URL を記入。
 const MAIL_ENDPOINT_DEFAULT = "";
 // フロントとApps Scriptで一致させる合言葉（乱用防止）。Apps Script側のSHARED_TOKENと必ず同じ値にすること。
 const MAIL_TOKEN = "yt-consent-883d0d5e9919fec7c85d0217";
+const CONSENT_VERSION = "2026-08-01.1";
+const BACKEND_VERSION = "2.2.0";
 function mailEndpoint(){ return (localStorage.getItem("mailEndpoint") || MAIL_ENDPOINT_DEFAULT || "").trim(); }
 
 const state = {
@@ -253,6 +271,7 @@ const state = {
   signature: null,      // dataURL
   when: null, geo: null,
   id: null,
+  consentHash: null, evidenceHash: null, certHash: null,
   cert: null, mailed: false
 };
 
@@ -265,8 +284,10 @@ function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("sh
 const screens = ["s1","s2","s3","s4","s5"];
 function show(step){
   state.step = step;
+  if(step!==4) ++sigGen;              // 画面外で完了した署名復元コールバックを無効化
   screens.forEach((id,i)=> $("#"+id).classList.toggle("active", i===step-1));
   document.querySelectorAll("#steps .dot").forEach((d,i)=> d.classList.toggle("on", i<=step-1));
+  $("#steps").setAttribute("aria-valuenow", String(step));
   $("#backBtn").style.display = step>1 && step<5 ? "block" : "none";
   $("#bar").style.display = step===5 ? "none" : "flex";
   window.scrollTo(0,0);
@@ -274,8 +295,8 @@ function show(step){
   if(step===1) setTimeout(checkDocEnd,50);   // 内容が枠内に収まる場合も同意可能にする
   if(step===3) startCamera();
   if(step!==3) stopCamera();
-  if(step===4) setTimeout(initSig,50);
-  if(step===5) buildCertificate();
+  if(step===4) setTimeout(()=>{ if(state.step===4) initSig(); },50);
+  if(step===5) buildCertificateSafely();
 }
 function refreshNext(){
   const b=$("#nextBtn"); let ok=false; let label="次へ";
@@ -287,8 +308,11 @@ function refreshNext(){
 }
 
 $("#nextBtn").onclick = ()=>{
-  if(state.step===2){ state.name=$("#name").value.trim(); state.guardian=$("#guardian").value.trim();
-    state.relation=$("#relation").value.trim(); }
+  if(state.step===2){
+    state.name=$("#name").value.trim();
+    state.guardian=state.age==="minor" ? $("#guardian").value.trim() : "";
+    state.relation=state.age==="minor" ? $("#relation").value.trim() : "";
+  }
   if(state.step<5) show(state.step+1);
 };
 $("#backBtn").onclick = ()=> show(Math.max(1,state.step-1));
@@ -301,6 +325,7 @@ function markScrolledEnd(){
   $("#scrollnote").textContent="✓ 最後まで確認しました";
   $("#scrollnote").classList.add("done");
   $("#chkWrap").classList.add("enabled");
+  $("#agree").disabled=false;
   refreshNext();
 }
 function checkDocEnd(){
@@ -314,7 +339,13 @@ setTimeout(checkDocEnd,300);                                          // フォ�
 $("#ageSeg").addEventListener("click", e=>{
   const b=e.target.closest("button"); if(!b) return;
   state.age=b.dataset.age;
-  document.querySelectorAll("#ageSeg button").forEach(x=>x.classList.toggle("sel",x===b));
+  document.querySelectorAll("#ageSeg button").forEach(x=>{
+    const selected=x===b; x.classList.toggle("sel",selected); x.setAttribute("aria-pressed",String(selected));
+  });
+  if(state.age==="adult"){
+    state.guardian=""; state.relation="";
+    $("#guardian").value=""; $("#relation").value="";
+  }
   $("#guardianBlock").style.display = state.age==="minor" ? "block":"none";
   refreshNext();
 });
@@ -324,32 +355,56 @@ $("#agree").addEventListener("change", refreshNext);
 /* ---------- admin: mail endpoint ---------- */
 const ENDPOINT_RE = /^https:\/\/script\.google\.com\/(a\/macros\/[^/]+|macros)\/s\/[^/]+\/exec$/;
 function setSaved(msg,color){ const el=$("#endpointSaved"); el.style.color=color||"var(--ok)"; el.textContent=msg||""; }
-function setOwner(html,color){ const el=$("#endpointOwner"); el.style.color=color||"var(--ok)"; el.innerHTML=html||""; }
+function setOwner(msg,color){ const el=$("#endpointOwner"); el.style.color=color||"var(--ok)"; el.textContent=msg||""; }
+function versionAtLeast(actual,required){
+  const a=String(actual||"").split(".").map(Number), r=required.split(".").map(Number);
+  for(let i=0;i<3;i++){ if((a[i]||0)!==(r[i]||0)) return (a[i]||0)>(r[i]||0); }
+  return true;
+}
+function updateEndpointNotice(kind,msg){
+  const el=$("#endpointNotice"); el.className="statusnote "+(kind||""); el.textContent=msg;
+}
 // エンドポイントにGETして控え先メール（伏せ字）を取得。設定ミスの確認用。
 async function pingEndpoint(url){
   const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),15000);
-  try{ const res=await fetch(url,{method:"GET",signal:ctrl.signal}); clearTimeout(t);
+  try{ const res=await fetch(url,{method:"GET",signal:ctrl.signal});
     let d=null; try{ d=await res.json(); }catch(_){}
     return d;
-  }catch(e){ clearTimeout(t); return null; }
+  }catch(e){ return null; }
+  finally{ clearTimeout(t); }
 }
 async function verifyEndpoint(url){
-  setOwner('<span class="spin" style="border-color:var(--sub);border-right-color:transparent"></span> 接続を確認中…', "var(--sub)");
+  setOwner("接続を確認中…", "var(--sub)");
   const d=await pingEndpoint(url);
+  const isSaved=mailEndpoint()===url;
   if(d && d.ok){
-    // d.owner はサーバ由来のため必ずエスケープ（XSS防止）
-    setOwner("✓ 接続OK　控え先メール: <b>"+esc(d.owner||"（不明）")+"</b>", "var(--ok)");
+    if(!versionAtLeast(d.version,BACKEND_VERSION)){
+      setOwner("⚠ 接続先が古い版です。Code.gsを最新版へ入れ替えて再デプロイしてください（現在: "+String(d.version||"不明")+"）。", "var(--danger)");
+      updateEndpointNotice("warn","控え先は保存されていますが、安全更新が必要です。撮影前にCode.gsを最新版へ更新してください。");
+      return;
+    }
+    setOwner("✓ 接続OK　控え先メール: "+String(d.owner||"（不明）")+"　版: "+String(d.version), "var(--ok)");
+    updateEndpointNotice("ok",isSaved
+      ? "控えメールの接続を確認できました。この端末の保存が消える場合があるため、撮影前にもここを確認してください。"
+      : "接続を確認できました。実際に使うには「保存」を押してください。");
   }else if(d && d.message){
-    setOwner("⚠ "+esc(d.message), "var(--danger)");
+    setOwner("⚠ 接続先の設定を確認してください。Code.gsのOWNER_EMAILとデプロイ設定を見直してください。", "var(--danger)");
+    updateEndpointNotice("warn","控えメールへ接続できません。証票は作成できますが、自動送信されません。");
   }else{
-    setOwner("⚠ 接続を確認できませんでした。URLが正しいか、デプロイの「アクセスできるユーザー」が<b>全員</b>になっているか確認してください。", "var(--danger)");
+    setOwner("⚠ 接続を確認できませんでした。URLと、デプロイの「アクセスできるユーザー」が「全員」になっているか確認してください。", "var(--danger)");
+    updateEndpointNotice("warn","現在は接続を確認できません。圏外の場合は、保存済みURLを使って完了時に送信を試みます。");
   }
 }
 (function initEndpoint(){
   const saved = localStorage.getItem("mailEndpoint") || "";
   if(saved) $("#endpointInput").value = saved;
   // 未設定の端末では設定パネルを開いて気づけるようにする
-  if(!saved && !MAIL_ENDPOINT_DEFAULT) document.querySelector("details.admin").open = true;
+  if(!saved && !MAIL_ENDPOINT_DEFAULT){
+    document.querySelector("details.admin").open = true;
+    updateEndpointNotice("warn","控えメールが未設定です。証票は作成できますが、自動送信されません。撮影前にURLを設定してください。");
+  }else{
+    updateEndpointNotice("","控え先URLをこの端末に保存しています。撮影前に接続テストで自分のメールを確認してください。");
+  }
   if(saved) verifyEndpoint(saved);   // 保存済みなら控え先を表示（設定確認）
   $("#saveEndpoint").onclick = ()=>{
     const v = $("#endpointInput").value.trim();
@@ -357,7 +412,10 @@ async function verifyEndpoint(url){
     if(v && !ENDPOINT_RE.test(v)){ setSaved("URLの形式が違います（…/exec）","var(--danger)"); return; }
     if(v) localStorage.setItem("mailEndpoint", v); else localStorage.removeItem("mailEndpoint");
     setSaved(v ? "保存しました" : "設定を解除しました");
-    if(v) verifyEndpoint(v); else setOwner("");
+    if(v) verifyEndpoint(v); else{
+      setOwner("");
+      updateEndpointNotice("warn","控えメールが未設定です。証票は作成できますが、自動送信されません。");
+    }
   };
   $("#testEndpoint").onclick = ()=>{
     const v = ($("#endpointInput").value.trim()) || mailEndpoint();
@@ -365,54 +423,66 @@ async function verifyEndpoint(url){
     if(!ENDPOINT_RE.test(v)){ setOwner("URLの形式が違います（…/exec）","var(--danger)"); return; }
     verifyEndpoint(v);
   };
+  $("#copyEndpoint").onclick = async ()=>{
+    const v=($("#endpointInput").value.trim())||mailEndpoint();
+    if(!ENDPOINT_RE.test(v)){ toast("先に正しいURLを入力してください"); return; }
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(v);
+      else{ $("#endpointInput").value=v; $("#endpointInput").select(); document.execCommand("copy"); }
+      toast("URLをコピーしました。自分だけが見られる場所に保管してください");
+    }catch(_){ toast("コピーできませんでした。URLを長押ししてコピーしてください"); }
+  };
 })();
 
 /* ---------- geolocation + time ---------- */
+let geoGen=0;
+function invalidateCapturedEvidence(){
+  state.photo=null; state.signature=null; state.cert=null; state.consentHash=null;
+  state.evidenceHash=null; state.certHash=null; state.mailed=false;
+}
 function captureContext(){
+  const gen=++geoGen;
   state.when = new Date();
-  state.id = "CONSENT-" + state.when.getFullYear()
-    + pad(state.when.getMonth()+1) + pad(state.when.getDate()) + "-"
-    + Math.random().toString(36).slice(2,7).toUpperCase();
+  state.id = null;
+  state.geo = null;
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
-      p=>{ state.geo={lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy, address:null};
-           updateLiveStamp(); reverseGeocode(p.coords.latitude, p.coords.longitude); },
-      ()=>{ state.geo={error:true}; updateLiveStamp(); },
-      {enableHighAccuracy:true, timeout:8000, maximumAge:60000}
+      p=>{ if(gen!==geoGen || state.photo) return;
+        state.geo={lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy}; updateLiveStamp(); },
+      ()=>{ if(gen!==geoGen || state.photo) return; state.geo={error:true}; updateLiveStamp(); },
+      {enableHighAccuracy:true, timeout:8000, maximumAge:0}
     );
   } else { state.geo={error:true}; }
 }
-function reverseGeocode(lat,lng){
-  const geoRef = state.geo;   // この取得サイクルのgeoにのみ書き込む（古い応答の混入防止）
-  const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=ja&zoom=18`;
-  fetch(url,{headers:{"Accept":"application/json"}})
-    .then(r=>r.ok?r.json():Promise.reject())
-    .then(d=>{
-      const a=d.address||{};
-      const parts=[
-        a.province||a.state,
-        a.city||a.county||a.town||a.village||a.municipality,
-        a.suburb||a.city_district||a.ward,
-        a.neighbourhood||a.quarter||a.hamlet,
-        a.road, a.house_number
-      ].filter(Boolean);
-      let addr = parts.join("");
-      if(!addr) addr = d.display_name || "";
-      if(addr && state.geo===geoRef && !geoRef.error){ geoRef.address=addr; updateLiveStamp(); }
-    })
-    .catch(()=>{ /* 住所変換失敗時は座標のみ */ });
+function makeConsentId(when){
+  if(!globalThis.crypto || !globalThis.crypto.getRandomValues) throw new Error("secure_random_unavailable");
+  const bytes=new Uint8Array(8); globalThis.crypto.getRandomValues(bytes);
+  const code=Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("").toUpperCase();
+  return "CONSENT-"+when.getFullYear()+pad(when.getMonth()+1)+pad(when.getDate())+"-"+code;
+}
+function snapshotGeo(g){
+  if(!g) return null;
+  if(g.error) return {error:true};
+  return {lat:Number(g.lat),lng:Number(g.lng),acc:Number(g.acc)};
+}
+function freezeCaptureContext(){
+  ++geoGen; // 撮影後に届く測位コールバックを無効化
+  state.when=new Date();
+  state.id=makeConsentId(state.when);
+  state.geo=snapshotGeo(state.geo);
+  updateLiveStamp();
 }
 const pad=n=>String(n).padStart(2,"0");
 function fmtTime(d){ return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; }
 function fmtGeo(g){ if(!g) return "位置情報 取得中…"; if(g.error) return "位置情報 取得不可";
-  if(g.address) return g.address;
   return `緯度 ${g.lat.toFixed(6)} / 経度 ${g.lng.toFixed(6)}`; }
 function fmtCoords(g){ if(!g||g.error||g.lat==null) return ""; return `緯度 ${g.lat.toFixed(6)} / 経度 ${g.lng.toFixed(6)}（±${Math.round(g.acc)}m）`; }
 // 証票・メール用の確定表記（「取得中…」のような一時テキストを記録に残さない）
-function fmtPlace(){ return state.geo ? fmtGeo(state.geo) : "位置情報 未取得"; }
+function fmtPlace(g=state.geo){ return g && !g.error && g.lat!=null ? "GPS座標（下記）" : "位置情報 未取得（撮影時）"; }
 function updateLiveStamp(){
   if(!state.when) return;
-  $("#liveStamp").innerHTML = `${fmtTime(state.when)}<br>${fmtGeo(state.geo)}`;
+  const el=$("#liveStamp");
+  el.replaceChildren(document.createTextNode(fmtTime(state.when)),document.createElement("br"),document.createTextNode(fmtGeo(state.geo)));
 }
 
 /* ---------- step 3: camera ---------- */
@@ -425,7 +495,8 @@ const CAM_ERR = {
 };
 async function startCamera(){
   const gen = ++camGen;             // 起動の世代番号（連打・画面移動との競合でストリームが漏れるのを防止）
-  state.photo=null;                 // 撮影ステップに入る/戻るたびに撮り直しを強制（ID・日時と焼き込みの不整合を防止）
+  stopCamera();                     // 撮り直しを含め、前のストリームを必ず閉じてから起動
+  invalidateCapturedEvidence();     // 撮影コンテキストが変わったら写真・署名・証票をすべて無効化
   captureContext(); updateLiveStamp();
   $("#camWarn").style.display="none";
   $("#photoPreview").style.display="none"; $("#video").style.display="block";
@@ -438,20 +509,34 @@ async function startCamera(){
   }catch(err){
     if(gen!==camGen) return;
     $("#camWarn").style.display="block";
-    $("#camWarn").textContent = CAM_ERR[err.name] || ("カメラを起動できません（"+err.name+"）。ページを開き直してみてください。");
+    $("#camWarn").textContent = CAM_ERR[err && err.name] || "カメラを起動できません。ページを開き直して、カメラの許可をご確認ください。";
   }
 }
-function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+function stopCamera(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  const v=$("#video"); if(v && v.srcObject) v.srcObject=null;
+}
 $("#switchCam").onclick = ()=>{ facing = facing==="environment"?"user":"environment"; stopCamera(); startCamera(); };
 
 $("#shoot").onclick = ()=>{
   const v=$("#video"); if(!v.videoWidth){ toast("カメラ準備中です"); return; }
-  state.when = new Date(); updateLiveStamp();           // 撮影時刻で確定
-  const c=$("#photoPreview"); const W=v.videoWidth, H=v.videoHeight;
+  try{ freezeCaptureContext(); }
+  catch(_){
+    $("#camWarn").style.display="block";
+    $("#camWarn").textContent="安全な証票IDを作成できませんでした。ページを開き直してもう一度お試しください。";
+    return;
+  }
+  const c=$("#photoPreview"), targetAspect=3/4;
+  let sx=0, sy=0, sourceW=v.videoWidth, sourceH=v.videoHeight;
+  if(sourceW/sourceH>targetAspect){ const cropped=sourceH*targetAspect; sx=(sourceW-cropped)/2; sourceW=cropped; }
+  else{ const cropped=sourceW/targetAspect; sy=(sourceH-cropped)/2; sourceH=cropped; }
+  const scale=Math.min(1,1920/sourceH);
+  const W=Math.max(1,Math.round(sourceW*scale)), H=Math.max(1,Math.round(sourceH*scale));
   c.width=W; c.height=H; const x=c.getContext("2d");
-  x.drawImage(v,0,0,W,H);
+  x.drawImage(v,sx,sy,sourceW,sourceH,0,0,W,H);           // 画面プレビュー（3:4）と同じ中央範囲
   burnWatermark(x,W,H);                                  // 可視透かし焼き込み
   state.photo = c.toDataURL("image/jpeg",0.92);
+  stopCamera();                                          // 撮影後は即時停止（LED・電池・プライバシー）
   v.style.display="none"; c.style.display="block";
   $("#shoot").style.display="none"; $("#switchCam").style.display="none"; $("#retake").style.display="block";
   refreshNext();
@@ -461,9 +546,8 @@ $("#retake").onclick = ()=>{ state.photo=null; startCamera(); refreshNext(); };
 function burnWatermark(ctx,W,H){
   const fs = Math.max(18, Math.round(W*0.032));
   // 「取得中…」のような一時テキストを恒久焼き込みしない
-  const geoLine = state.geo ? fmtGeo(state.geo) : "位置情報 未取得（撮影時）";
+  const geoLine = fmtCoords(state.geo) || "位置情報 未取得（撮影時）";
   const lines = [ fmtTime(state.when), geoLine ];
-  const co = fmtCoords(state.geo); if(co) lines.push(co);
   lines.push(state.id);
   ctx.font = `600 ${fs}px -apple-system, "Hiragino Sans", sans-serif`;
   ctx.textBaseline="top";
@@ -480,80 +564,172 @@ function burnWatermark(ctx,W,H){
 }
 
 /* ---------- step 4: signature ---------- */
-let sigCtx, drawing=false, sigDirty=false;
-function initSig(){
+let sigCtx, drawing=false, sigDirty=false, sigInkLength=0, sigLast=null, sigGen=0;
+function initSig(clearSignature=true){
+  ++sigGen;
   const c=$("#sig"); const rect=c.getBoundingClientRect();
   const dpr=window.devicePixelRatio||1;
   c.width=rect.width*dpr; c.height=rect.height*dpr;
   sigCtx=c.getContext("2d"); sigCtx.scale(dpr,dpr);
   sigCtx.lineWidth=3; sigCtx.lineCap="round"; sigCtx.lineJoin="round"; sigCtx.strokeStyle="#111";
   sigCtx.clearRect(0,0,c.width,c.height);
-  sigDirty=false; $("#sigph").style.display="flex";
+  drawing=false; sigDirty=false; sigInkLength=0; sigLast=null;
+  if(clearSignature) state.signature=null;
+  $("#sigph").style.display="flex";
+  $("#sigHelp").textContent="枠内に指で、線を引くようにサインしてください。";
+  refreshNext();
 }
 function sigPos(e){ const r=$("#sig").getBoundingClientRect();
   const p=e.touches?e.touches[0]:e; return {x:p.clientX-r.left, y:p.clientY-r.top}; }
-function sigStart(e){ e.preventDefault(); drawing=true; const p=sigPos(e);
-  sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y);
-  if(!sigDirty){ sigDirty=true; $("#sigph").style.display="none"; } }
-function sigMove(e){ if(!drawing) return; e.preventDefault(); const p=sigPos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); }
-function sigEnd(){ if(!drawing) return; drawing=false; if(sigDirty){ state.signature=$("#sig").toDataURL("image/png"); refreshNext(); } }
+function sigStart(e){ e.preventDefault(); ++sigGen; drawing=true; const p=sigPos(e);
+  sigLast=p; sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); }
+function sigMove(e){
+  if(!drawing) return; e.preventDefault(); const p=sigPos(e);
+  const distance=sigLast?Math.hypot(p.x-sigLast.x,p.y-sigLast.y):0;
+  if(distance>0){
+    sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); sigInkLength+=distance; sigLast=p;
+    if(!sigDirty){ sigDirty=true; $("#sigph").style.display="none"; }
+  }
+}
+function sigEnd(){
+  if(!drawing) return; drawing=false; sigLast=null;
+  if(sigDirty && sigInkLength>=24){
+    state.signature=$("#sig").toDataURL("image/png");
+    $("#sigHelp").textContent="署名を確認しました。";
+  }else{
+    state.signature=null;
+    if(sigDirty) $("#sigHelp").textContent="もう少し長く署名してください。";
+  }
+  refreshNext();
+}
 (()=>{ const c=$("#sig");
   c.addEventListener("touchstart",sigStart,{passive:false});
   c.addEventListener("touchmove",sigMove,{passive:false});
   c.addEventListener("touchend",sigEnd);
+  c.addEventListener("touchcancel",()=>{ drawing=false; sigLast=null; });
   c.addEventListener("mousedown",sigStart); c.addEventListener("mousemove",sigMove);
   window.addEventListener("mouseup",sigEnd);
 })();
-$("#sigClear").onclick = ()=>{ initSig(); state.signature=null; refreshNext(); };
+$("#sigClear").onclick = ()=> initSig();
 // 署名中に画面回転/リサイズしても座標がずれないよう、描画済みの署名を保って再初期化
 window.addEventListener("resize", ()=>{
   if(state.step!==4) return;
   const prev = sigDirty ? $("#sig").toDataURL() : null;
-  initSig();
+  const prevLength=sigInkLength;
+  state.signature=null;
+  initSig(false);
+  const gen=sigGen;
   if(prev){
     const i=new Image();
     i.onload=()=>{
+      if(gen!==sigGen || state.step!==4) return;
       const r=$("#sig").getBoundingClientRect();
       sigCtx.drawImage(i,0,0,r.width,r.height);
-      sigDirty=true; $("#sigph").style.display="none";
-      state.signature=$("#sig").toDataURL("image/png"); refreshNext();
+      sigDirty=true; sigInkLength=prevLength; $("#sigph").style.display="none";
+      if(sigInkLength>=24){ state.signature=$("#sig").toDataURL("image/png"); $("#sigHelp").textContent="署名を確認しました。"; }
+      refreshNext();
     };
     i.src=prev;
   }
 });
 
 /* ---------- step 5: build certificate PNG ---------- */
+function consentTextForHash(){
+  const clone=$("#doc").cloneNode(true), end=clone.querySelector("#docEnd");
+  if(end) end.remove();
+  return clone.textContent.replace(/\s+/g," ").trim();
+}
+function bytesFromDataUrl(src){
+  const comma=String(src||"").indexOf(",");
+  if(comma<0) throw new Error("invalid_data_url");
+  const bin=atob(src.slice(comma+1)), bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  return bytes;
+}
+function bytesToHex(bytes){ return Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join(""); }
+async function sha256Bytes(bytes){
+  if(!globalThis.crypto || !globalThis.crypto.subtle) throw new Error("hash_unavailable");
+  return bytesToHex(new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256",bytes)));
+}
+function sha256Text(text){ return sha256Bytes(new TextEncoder().encode(text)); }
+function sha256DataUrl(src){ return sha256Bytes(bytesFromDataUrl(src)); }
+function evidenceRecord(photoHash,signatureHash,consentHash){
+  return JSON.stringify({
+    format:"youtube-consent-evidence-v1", consentVersion:CONSENT_VERSION, consentHash,
+    id:state.id, age:state.age, performerName:state.name,
+    guardianName:state.age==="minor"?state.guardian:"",
+    guardianRelation:state.age==="minor"?state.relation:"",
+    when:fmtTime(state.when), place:fmtPlace(), coords:fmtCoords(state.geo),
+    photoHash, signatureHash
+  });
+}
+function wrapCanvasText(ctx,text,maxWidth){
+  const lines=[]; let line="";
+  for(const ch of Array.from(String(text||"―"))){
+    const next=line+ch;
+    if(line && ctx.measureText(next).width>maxWidth){ lines.push(line); line=ch; }
+    else line=next;
+  }
+  if(line||!lines.length) lines.push(line||"―");
+  return lines;
+}
+async function buildCertificateSafely(){
+  $("#buildError").hidden=true; $("#buildStat").hidden=false;
+  $("#resultImg").removeAttribute("src"); $("#resultMeta").textContent="";
+  try{
+    await buildCertificate();
+    $("#buildStat").hidden=true;
+  }catch(error){
+    console.error("certificate build failed",error);
+    state.cert=null; state.certHash=null;
+    $("#buildStat").hidden=true; $("#buildError").hidden=false;
+  }
+}
+$("#retryBuild").onclick=()=>buildCertificateSafely();
+$("#backToSignature").onclick=()=>show(4);
+
 async function buildCertificate(){
-  const W=1080, pad=48;
-  const photoImg = await loadImg(state.photo);
-  const sigImg = await loadImg(state.signature);
-  // layout heights
+  if(!state.photo||!state.signature||!state.when||!state.id) throw new Error("evidence_incomplete");
+  const W=1080, pad=48, valueX=pad+200, valueWidth=W-pad-valueX;
+  const [photoImg,sigImg,photoHash,signatureHash,consentHash]=await Promise.all([
+    loadImg(state.photo),loadImg(state.signature),sha256DataUrl(state.photo),sha256DataUrl(state.signature),sha256Text(consentTextForHash())
+  ]);
+  state.consentHash=consentHash;
+  state.evidenceHash=await sha256Text(evidenceRecord(photoHash,signatureHash,consentHash));
+
   const photoW = W-pad*2;
   const photoH = Math.round(photoW * (photoImg.height/photoImg.width));
   const sigH = 220;
-
-  // 記載行を先に確定し、キャンバス高さを実測ベースで算出（固定値だと行数増で朱印が下端で切れる）
   const ageTxt = state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）";
-  const rows = [
+  const rawRows = [
     ["区分", ageTxt],
     ["出演者氏名", state.name || "―"],
   ];
-  if(state.age==="minor") rows.push(["保護者氏名", (state.guardian||"―") + (state.relation?`（${state.relation}）`:"")]);
-  rows.push(["撮影日時", fmtTime(state.when)]);
-  rows.push(["撮影場所", fmtPlace()]);
-  const coRow=fmtCoords(state.geo); if(coRow) rows.push(["座標", coRow]);
-  rows.push(["証票ID", state.id]);
-  // ヘッダ実消費138 / 行40px+末尾14 / 写真後40+ラベル30+署名枠+30 / 朱印+脚注180 / 上下pad
-  const H = pad + 138 + rows.length*40 + 14 + photoH + 40 + 30 + sigH + 30 + 180 + pad;
+  if(state.age==="minor") rawRows.push(["保護者氏名", (state.guardian||"―") + (state.relation?`（${state.relation}）`:"")]);
+  rawRows.push(["撮影日時", fmtTime(state.when)]);
+  rawRows.push(["撮影場所", fmtPlace()]);
+  const coRow=fmtCoords(state.geo); if(coRow) rawRows.push(["座標", coRow]);
+  rawRows.push(["証票ID", state.id]);
+  rawRows.push(["同意文面版", CONSENT_VERSION]);
+  rawRows.push(["文面SHA-256", state.consentHash]);
+  rawRows.push(["証跡SHA-256", state.evidenceHash]);
+
+  const measure=document.createElement("canvas").getContext("2d");
+  measure.font="600 24px -apple-system,'Hiragino Sans',sans-serif";
+  const rows=rawRows.map(([label,value])=>{
+    const lines=wrapCanvasText(measure,value,valueWidth);
+    return {label,lines,height:Math.max(40,lines.length*30+8)};
+  });
+  const rowsHeight=rows.reduce((sum,row)=>sum+row.height,0);
+  // ヘッダ138 / 可変行+末尾14 / 写真後40+ラベル30+署名枠+30 / 朱印・脚注180 / 上下pad
+  const H = pad + 138 + rowsHeight + 14 + photoH + 40 + 30 + sigH + 30 + 180 + pad;
 
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H;
   const x=cv.getContext("2d");
-  // bg
   x.fillStyle="#ffffff"; x.fillRect(0,0,W,H);
   x.fillStyle="#0f1115"; x.fillRect(0,0,W,12);
 
   let y=pad;
-  // header
   x.fillStyle="#0f1115"; x.textBaseline="top";
   x.font="700 44px -apple-system,'Hiragino Sans',sans-serif";
   x.fillText("出演許諾 証票", pad, y); y+=64;
@@ -561,43 +737,39 @@ async function buildCertificate(){
   x.fillText("YouTube等への出演・公開に関する同意の記録", pad, y); y+=44;
   x.strokeStyle="#e2e5ea"; x.lineWidth=2; x.beginPath(); x.moveTo(pad,y); x.lineTo(W-pad,y); x.stroke(); y+=30;
 
-  // context block（rowsは上で構築済み）
-  rows.forEach(r=>{
+  rows.forEach(row=>{
     x.fillStyle="#888"; x.font="400 22px -apple-system,'Hiragino Sans',sans-serif";
-    x.fillText(r[0], pad, y);
+    x.fillText(row.label, pad, y);
     x.fillStyle="#111"; x.font="600 24px -apple-system,'Hiragino Sans',sans-serif";
-    x.fillText(r[1], pad+200, y, W-pad*2-200);   // 長い住所・氏名でも幅内に収める
-    y+=40;
+    row.lines.forEach((line,i)=>x.fillText(line,valueX,y+i*30));
+    y+=row.height;
   });
   y+=14;
 
-  // photo
   x.drawImage(photoImg, pad, y, photoW, photoH);
   x.strokeStyle="#d7dce6"; x.lineWidth=2; x.strokeRect(pad,y,photoW,photoH);
   y+=photoH+40;
 
-  // signature label + image（ラベルが白枠に重ならないよう30px空ける）
   x.fillStyle="#888"; x.font="400 22px -apple-system,'Hiragino Sans',sans-serif";
   x.fillText("署名", pad, y); y+=30;
   x.fillStyle="#fff"; x.strokeStyle="#d7dce6"; x.lineWidth=2;
   x.fillRect(pad,y,W-pad*2,sigH); x.strokeRect(pad,y,W-pad*2,sigH);
-  // アスペクト比を保って描画（署名の歪み防止）
   const drawH = sigH-20;
   const drawW = Math.min(W-pad*2-40, Math.round(drawH*(sigImg.width/sigImg.height)));
   x.drawImage(sigImg, pad+20, y+10, drawW, drawH);
   y+=sigH+30;
 
-  // 朱印 seal (同意済)
   drawSeal(x, W-pad-150, y+10, 150, "同意済");
-
-  // footer note
-  x.fillStyle="#999"; x.font="400 18px -apple-system,'Hiragino Sans',sans-serif";
-  x.fillText("本証票は出演同意の証跡として生成されました。", pad, y+40);
+  x.fillStyle="#777"; x.font="400 18px -apple-system,'Hiragino Sans',sans-serif";
+  x.fillText("同意文面と写真・署名のハッシュを記録した証票です。", pad, y+40, W-pad*2-180);
+  x.fillText("添付PNGのSHA-256は運営者控えメールで照合できます。", pad, y+70, W-pad*2-180);
 
   const dataURL = cv.toDataURL("image/png");
+  state.certHash=await sha256DataUrl(dataURL);
   state.cert = dataURL;
+  $("#buildError").hidden=true; $("#buildStat").hidden=true;
   $("#resultImg").src = dataURL;
-  $("#resultMeta").innerHTML = `証票ID: ${esc(state.id)}<br>${esc(fmtTime(state.when))}<br>${esc(fmtPlace())}`;
+  $("#resultMeta").textContent = `証票ID: ${state.id}\n${fmtTime(state.when)}\n${fmtPlace()}\n証票SHA-256: ${state.certHash}`;
   renderResultButtons();
   maybeAutoSend();
 }
@@ -624,19 +796,23 @@ function renderResultButtons(){
   const main=$("#s5 .result");
   let box=$("#resultBtns");
   if(!box){ box=document.createElement("div"); box.id="resultBtns"; box.className="cambtns"; box.style.marginTop="16px"; main.appendChild(box); }
-  box.innerHTML="";
+  box.replaceChildren();
   const mailBtn=document.createElement("button"); mailBtn.id="mailBtn"; mailBtn.className="btn ok";
+  mailBtn.type="button";
   mailBtn.textContent = state.mailed ? "運営者控えを再送" : "運営者控えを送信";
   mailBtn.onclick=()=>sendMail(true);
   const shareBtn=document.createElement("button"); shareBtn.className="btn ghost"; shareBtn.textContent="共有";
+  shareBtn.type="button";
   shareBtn.onclick=shareCert;
   box.appendChild(mailBtn); box.appendChild(shareBtn);
   let box2=$("#resultBtns2");
   if(!box2){ box2=document.createElement("div"); box2.className="cambtns"; box2.style.marginTop="10px"; box2.id="resultBtns2"; main.appendChild(box2); }
-  box2.innerHTML="";
+  box2.replaceChildren();
   const dlBtn=document.createElement("button"); dlBtn.className="btn ghost"; dlBtn.textContent="ダウンロード保存";
+  dlBtn.type="button";
   dlBtn.onclick=downloadCert;
   const nb=document.createElement("button"); nb.className="btn"; nb.textContent="次の出演者を登録";
+  nb.type="button";
   nb.onclick=resetAll;
   box2.appendChild(dlBtn); box2.appendChild(nb);
 }
@@ -644,8 +820,9 @@ function renderResultButtons(){
 /* ---------- email the certificate ---------- */
 function setMailStat(kind,msg,spin){
   const el=$("#mailStat"); el.style.display="flex"; el.className="mailstat "+(kind||"");
-  el.innerHTML = (spin?'<span class="spin"></span>':"") + '<span></span>';
-  el.querySelector("span:last-child").textContent = msg;
+  const text=document.createElement("span"); text.textContent=msg;
+  if(spin){ const icon=document.createElement("span"); icon.className="spin"; el.replaceChildren(icon,text); }
+  else el.replaceChildren(text);
 }
 function maybeAutoSend(){
   if(!mailEndpoint()){
@@ -674,6 +851,11 @@ function maybeAutoSend(){
 const MAIL_ERR = {
   unauthorized:"認証エラー（合言葉が一致しません。Apps Script側のSHARED_TOKENを確認）",
   no_image:"画像データがありません",
+  image_too_large:"証票画像が大きすぎます。ページを開き直して撮影し直してください",
+  invalid_id:"証票IDを確認できません。ページを開き直して撮影し直してください",
+  id_conflict:"同じ証票IDの別画像が既にあります。証票を作り直してください",
+  invalid_field:"入力内容を確認できません。ページを開き直して入力し直してください",
+  hash_mismatch:"証票の整合性を確認できません。証票を作り直してください",
   bad_request:"送信データの形式が不正です",
   no_body:"送信データが空です",
   busy:"混み合っています。少し待って再送してください",
@@ -682,26 +864,35 @@ const MAIL_ERR = {
   not_configured:"送信先メールが未設定です（Apps Script側の設定を確認してください）",
   server_error:"サーバ側でエラーが発生しました"
 };
+function mailPayload(){
+  const minor=state.age==="minor";
+  return {
+    token: MAIL_TOKEN,
+    imageBase64: state.cert,
+    id: state.id,
+    performerName: state.name,
+    guardianName: minor ? state.guardian : "",
+    guardianRelation: minor ? state.relation : "",
+    ageCode: minor ? "minor" : "adult",
+    ageKind: minor ? "18歳未満（保護者同意あり）" : "本人（18歳以上）",
+    when: fmtTime(state.when),
+    place: fmtPlace(),
+    coords: fmtCoords(state.geo),
+    consentVersion: CONSENT_VERSION,
+    consentHash: state.consentHash,
+    evidenceHash: state.evidenceHash,
+    certificateHash: state.certHash,
+    userAgent: navigator.userAgent
+  };
+}
 async function sendMail(manual){
   const url=mailEndpoint();
   if(!url){ setMailStat("err","メール送信先が未設定です。①画面の「⚙ メール送信の設定」を開いてURLを登録してください。"); return; }
   if(!state.cert){ setMailStat("err","証票がまだ生成されていません。"); return; }
   const btn=$("#mailBtn"); if(btn) btn.disabled=true;
   setMailStat("send","運営者控えを送信しています…", true);
-  // 宛先はApps Script側で固定。ここからは宛先メールアドレスを一切送らない（記録用メタのみ）。
-  const payload = {
-    token: MAIL_TOKEN,
-    imageBase64: state.cert,
-    id: state.id,
-    performerName: state.name,
-    guardianName: state.guardian,
-    guardianRelation: state.relation,
-    ageKind: state.age==="minor" ? "18歳未満（保護者同意あり）" : "本人（18歳以上）",
-    when: fmtTime(state.when),
-    place: fmtPlace(),
-    coords: fmtCoords(state.geo),
-    userAgent: navigator.userAgent
-  };
+  // 宛先はApps Script側で固定。ここからは宛先メールアドレスを一切送らない。
+  const payload = mailPayload();
 
   const ctrl = new AbortController();
   const timer = setTimeout(()=>ctrl.abort(), 30000);   // 30秒でタイムアウト（無限スピナー防止）
@@ -713,16 +904,26 @@ async function sendMail(manual){
       body: JSON.stringify(payload),
       signal: ctrl.signal
     });
-    clearTimeout(timer);
     let data=null; try{ data=await res.json(); }catch(_){}
+    if(!res.ok){
+      setMailStat("err","✗ 送信先との通信に失敗しました。少し待って再送してください。");
+      reenable(state.mailed?"運営者控えを再送":"運営者控えを送信");
+      return;
+    }
     if(data && data.ok){
+      if(data.certificateHash && data.certificateHash!==state.certHash){
+        setMailStat("err","✗ 送信先で証票の照合結果が一致しませんでした。証票を作り直してください。");
+        reenable("運営者控えを再送");
+        return;
+      }
       state.mailed=true;
       const to = data.owner ? "（控え先: "+data.owner+"）" : "";
       const dd = data.status==="already_sent" ? "（既に送信済みのため重複送信を防止しました）" : "";
-      setMailStat("ok","✓ 運営者控えを送信しました"+to+dd);
+      const old = data.certificateHash ? "" : "　※送信先が古い版です。Code.gsを最新版へ更新してください。";
+      setMailStat(data.certificateHash?"ok":"err","✓ 運営者控えを送信しました"+to+dd+old);
       reenable("運営者控えを再送");
     }else if(data && (data.code || data.error)){
-      const msg = data.message || MAIL_ERR[data.code||data.error] || (data.code||data.error);
+      const msg = MAIL_ERR[data.code||data.error] || "送信先で問題が発生しました。設定を確認して再送してください";
       setMailStat("err","✗ 送信できませんでした（"+msg+"）。");
       reenable(state.mailed?"運営者控えを再送":"運営者控えを送信");
     }else{
@@ -733,38 +934,40 @@ async function sendMail(manual){
       reenable("念のため再送");
     }
   }catch(err){
-    clearTimeout(timer);
     const kind = (err && err.name==="AbortError") ? "タイムアウト" : "通信エラー";
     setMailStat("err","△ 応答を確認できませんでした（"+kind+"）。送信されている可能性があります。運営者の控えを確認し、届いていなければ「運営者控えを再送」してください（重複は自動で防止されます）。");
     reenable("運営者控えを再送");
+  }finally{
+    clearTimeout(timer);
   }
 }
 function certFile(){
-  const bin=atob(state.cert.split(",")[1]); const arr=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-  return new File([arr], `${state.id}.png`, {type:"image/png"});
+  return new File([bytesFromDataUrl(state.cert)], `${state.id}.png`, {type:"image/png"});
 }
 async function shareCert(){
-  const file=certFile();
-  if(navigator.canShare && navigator.canShare({files:[file]})){
-    try{ await navigator.share({files:[file], title:"出演許諾 証票", text:state.id}); }
-    catch(e){ /* cancelled */ }
-  } else { downloadCert(); toast("共有非対応のため保存しました"); }
+  try{
+    const file=certFile();
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:"出演許諾 証票", text:state.id}); }
+      catch(e){ if(!e || e.name!=="AbortError") toast("共有できませんでした。ダウンロード保存をお試しください"); }
+    } else { downloadCert(); toast("共有に対応していないため、保存操作を開始しました"); }
+  }catch(_){ toast("証票ファイルを準備できませんでした。証票を作り直してください"); }
 }
 function downloadCert(){
   const a=document.createElement("a"); a.href=state.cert; a.download=`${state.id}.png`;
-  document.body.appendChild(a); a.click(); a.remove(); toast("画像を保存しました");
+  document.body.appendChild(a); a.click(); a.remove(); toast("保存操作を開始しました。ダウンロードをご確認ください");
 }
 function resetAll(){
   Object.assign(state,{step:1,age:null,scrolledEnd:false,name:"",guardian:"",relation:"",
-    photo:null,signature:null,when:null,geo:null,id:null,cert:null,mailed:false});
-  $("#agree").checked=false; $("#name").value=""; $("#guardian").value=""; $("#relation").value="";
-  document.querySelectorAll("#ageSeg button").forEach(x=>x.classList.remove("sel"));
+    photo:null,signature:null,when:null,geo:null,id:null,consentHash:null,evidenceHash:null,certHash:null,cert:null,mailed:false});
+  $("#agree").checked=false; $("#agree").disabled=true; $("#name").value=""; $("#guardian").value=""; $("#relation").value="";
+  document.querySelectorAll("#ageSeg button").forEach(x=>{ x.classList.remove("sel"); x.setAttribute("aria-pressed","false"); });
   $("#guardianBlock").style.display="none";
   $("#chkWrap").classList.remove("enabled");
   $("#scrollnote").textContent="⬇ 最後までスクロールしてください"; $("#scrollnote").classList.remove("done");
   doc.scrollTop=0;
   $("#mailStat").style.display="none"; $("#mailStat").className="mailstat";
+  $("#buildError").hidden=true; $("#buildStat").hidden=false;
   $("#resultImg").removeAttribute("src");   // 前の出演者の証票が次の⑤で一瞬見えるのを防止
   const rb=$("#resultBtns"); if(rb) rb.remove();
   const rb2=$("#resultBtns2"); if(rb2) rb2.remove();
