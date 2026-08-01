@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Run static and backend checks
+        run: |
+          node tests/invariants.test.js
+          node tests/backend.test.js
       - name: Run consent and certificate checks
         shell: bash
         run: |
@@ -54,3 +58,27 @@ jobs:
             exit 1
           fi
           grep -o '<pre id="result">[^<]*' /tmp/youtube-consent-smoke.html
+
+  safari-smoke:
+    runs-on: macos-15
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Run smoke test in Safari
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 8791 --bind 127.0.0.1 > /tmp/youtube-consent-http.log 2>&1 &
+          server_pid=$!
+          for _ in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8791/tests/smoke.html > /dev/null; then
+              break
+            fi
+            sleep 0.25
+          done
+          curl --fail --silent http://127.0.0.1:8791/tests/smoke.html > /dev/null
+          sudo safaridriver --enable
+          safaridriver --port 4444 > /tmp/youtube-consent-safaridriver.log 2>&1 &
+          driver_pid=$!
+          trap 'kill "$driver_pid" "$server_pid" 2>/dev/null || true' EXIT
+          python3 tests/webdriver_smoke.py
