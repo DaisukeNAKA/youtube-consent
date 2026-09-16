@@ -366,17 +366,17 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
     fc.append("[vcat]" + ",".join(vchain) + "[vout]")
 
     filter_script = Path(workdir) / "filter_complex.txt"
-    filter_script.write_text(";\n".join(fc), encoding="utf-8")
+    filter_script.write_text(";\n".join(fc), encoding="utf-8")   # 記録用
 
     cmd = [FFMPEG, "-hide_banner", "-y", "-stats_period", "30"] + inputs + [
-        "-filter_complex_script", str(filter_script),
+        "-filter_complex", ";".join(fc),
         "-map", "[vout]", "-map", "[aout]",
         "-c:v", "libx264", "-preset", vcfg.get("preset", "medium"), "-crf", str(vcfg.get("crf", 19)),
         "-profile:v", "high", "-level", "4.1", "-pix_fmt", "yuv420p", "-r", str(fps),
         "-g", str(fps * 2), "-bf", "2",
         "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
         "-c:a", "aac", "-b:a", "256k", "-ar", "48000", "-ac", "2",
-        "-movflags", "+faststart", "-t", f"{total_out:.3f}", str(outpath)]
+        "-movflags", "+faststart", "-write_tmcd", "0", "-t", f"{total_out:.3f}", str(outpath)]
     meta = {"keep_segments": tl.keep, "out_duration": round(tl.out_duration, 3), "total_out": round(total_out, 3),
             "themes_out": theme_out, "se": se_log, "ed": ed_log,
             "talk_end_out": round(tl.out_talk_end(), 3), "cmd": cmd}
