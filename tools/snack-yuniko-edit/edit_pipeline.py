@@ -357,8 +357,13 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
     vchain = [f"scale={width}:{height}:flags=lanczos:force_original_aspect_ratio=decrease",
               f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2", f"fps={fps}", "format=yuv420p"]
     fontsdir = fonts.get("dir")
-    ass_arg = str(ass_path).replace("\\", "/").replace(":", "\\:")
-    vchain.append(f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else ""))
+
+    def fesc(v):  # ffmpeg フィルタ引数用エスケープ（ffmpeg 7/9 双方で有効な明示キー＋バックスラッシュ形式）
+        out = str(v)
+        for ch in ("\\", ":", ",", ";", "[", "]", "'"):
+            out = out.replace(ch, "\\" + ch)
+        return out
+    vchain.append(f"ass=filename={fesc(ass_path)}" + (f":fontsdir={fesc(fontsdir)}" if fontsdir else ""))
     if ed and fade_v > 0:
         vchain.append(f"fade=t=out:st={max(0.0, tl.out_duration - fade_v):.3f}:d={fade_v:.3f}")
     if black_tail > 0:

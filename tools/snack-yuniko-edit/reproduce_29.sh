@@ -73,7 +73,8 @@ p["source"] = sys.argv[3]; p["se_dir"] = sys.argv[4]
 json.dump(p, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print("plan:", sys.argv[2])
 PY
-python3 "$TOOLS/edit_pipeline.py" "$WORK/plan_29_local.json" --out "$WORK/out/$OUT_NAME" --workdir "$WORK/work" --fonts-dir "$WORK/fonts" $DRY
+SKIP=""; [ -f "$WORK/work/dialogue_processed.wav" ] && SKIP="--skip-dialogue" && echo "（整音済み音声を再利用します）"
+python3 "$TOOLS/edit_pipeline.py" "$WORK/plan_29_local.json" --out "$WORK/out/$OUT_NAME" --workdir "$WORK/work" --fonts-dir "$WORK/fonts" $SKIP $DRY
 if [ -z "$DRY" ]; then
   cp "$WORK/out/$OUT_NAME" "$HOME/Downloads/$OUT_NAME"
   echo "== 完成: $HOME/Downloads/$OUT_NAME"
