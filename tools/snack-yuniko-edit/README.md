@@ -31,7 +31,8 @@ bash ~/Movies/snack_yuniko_repo/tools/snack-yuniko-edit/reproduce_29.sh
 ```
 
 - 原本 `DJI_20260915135827_0021_D.MP4` が Mac 上にある場合は、そのパスを第1引数に渡すと Drive からの取得（10.9GB）を省略できます。
-- 必要なもの: Homebrew の ffmpeg（無ければ自動導入）、Python 3（macOS 標準）。フォント（BIZ UDGothic Bold）と SE は自動取得します。
+- 必要なもの: Python 3（macOS 標準）。ffmpeg は Homebrew ごと自動導入（初回のみ Mac のログインパスワード入力あり）。フォント（BIZ UDGothic Bold）と SE は自動取得します。
+- 2 回目以降・更新後は `cd ~/Movies/snack_yuniko_repo && git pull && bash tools/snack-yuniko-edit/reproduce_29.sh` で再実行できます。
 - 動作確認済みの出力仕様: 1920×1080 / 30fps / H.264 / AAC 48kHz、約 −13 LUFS。QA は `~/Movies/snack_yuniko_29/work/qa_report.json`。
 
 ### ローカルの Claude Code に貼る指示文

@@ -17,12 +17,18 @@ mkdir -p "$WORK/raw" "$WORK/se" "$WORK/fonts" "$WORK/work" "$WORK/out"
 echo "== 作業フォルダ: $WORK"
 
 echo "== 1/6 ffmpeg の確認"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 if ! command -v ffmpeg >/dev/null 2>&1; then
-  if command -v brew >/dev/null 2>&1; then
-    echo "ffmpeg が無いので Homebrew で導入します（数分かかります）"; brew install ffmpeg
-  else
-    echo "ffmpeg も Homebrew もありません。先に https://brew.sh の手順で Homebrew を入れてから再実行してください"; exit 1
+  if ! command -v brew >/dev/null 2>&1; then
+    echo "Homebrew（Mac 用のソフト導入ツール）を先に導入します。"
+    echo "  → 途中で Mac のログインパスワードを聞かれたら入力して Enter（入力中は画面に表示されません）"
+    echo "  → 「Press RETURN」と出たら Enter を押してください"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+    command -v brew >/dev/null 2>&1 || { echo "Homebrew の導入が確認できませんでした。ターミナルを開き直して再実行してください"; exit 1; }
   fi
+  echo "ffmpeg を Homebrew で導入します（5〜10 分かかります）"
+  brew install ffmpeg
 fi
 ffmpeg -hide_banner -version | head -1
 FILTERS="$(ffmpeg -hide_banner -filters 2>/dev/null || true)"
