@@ -261,6 +261,61 @@ def build_theme_ass(cfg, tl, fonts, out_path):
 
 
 # ---------------------------------------------------------------------------
+# 2b) テーマ表示を PNG として描画（Pillow）。libass/drawtext の無い ffmpeg でも overlay だけで焼き込める
+# ---------------------------------------------------------------------------
+def hex_rgb(h):
+    v = h.lower().replace("0x", "").replace("#", "")
+    return tuple(int(v[i:i + 2], 16) for i in (0, 2, 4))
+
+
+def build_theme_pngs(cfg, tl, font_file, outdir):
+    from PIL import Image, ImageDraw, ImageFont
+    st = cfg.get("style", {})
+    x0 = int(st.get("x", 48)); y0 = int(st.get("y", 40))
+    label = cfg.get("label", "")
+    label_size = int(st.get("label_size", 30)); theme_size = int(st.get("theme_size", 46))
+    purple = hex_rgb(st.get("purple", "0x3A0F5C")); purple_a = int(round(float(st.get("purple_alpha", 0.86)) * 255))
+    pink = hex_rgb(st.get("pink", "0xFF2D95")); yellow = hex_rgb(st.get("yellow", "0xFFD400"))
+    outline = hex_rgb(st.get("outline", "0x24063A"))
+    pad = int(st.get("pad", 14)); bar_w = int(st.get("bar_w", 12)); lpad = max(6, pad - 6)
+    f_label = ImageFont.truetype(str(font_file), label_size)
+    f_theme = ImageFont.truetype(str(font_file), theme_size)
+    la, ld = f_label.getmetrics(); ta, td = f_theme.getmetrics()
+    label_box_h = la + ld + 2 * lpad
+    theme_y = y0 + label_size + lpad * 2 + 10          # ASS 版と同じ配置
+    theme_box_h = ta + td + 2 * pad
+    tx = x0 + bar_w + pad                               # テーマ文字の左端
+    lx = tx                                             # ラベル文字の左端
+    themes = cfg.get("themes", [])
+    total_end = tl.out_duration + 1.0
+    out = []
+    Path(outdir).mkdir(parents=True, exist_ok=True)
+    for i, th in enumerate(themes):
+        s_out = tl.src_to_out(th["source_start"])
+        e_out = tl.src_to_out(themes[i + 1]["source_start"]) if i + 1 < len(themes) else total_end
+        if e_out <= s_out:
+            continue
+        title = th["title"]
+        tw = int(f_theme.getlength(title)); lw = int(f_label.getlength(label)) if label else 0
+        W = max(tx + tw + pad, lx + lw + lpad) + 6
+        H = theme_y - pad + theme_box_h + 6
+        img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(img)
+        if label:
+            d.rectangle([lx - lpad, y0 - lpad, lx + lw + lpad, y0 - lpad + label_box_h], fill=purple + (purple_a,))
+            d.text((lx, y0), label, font=f_label, fill=yellow + (255,), stroke_width=2, stroke_fill=outline + (255,), anchor="la")
+        by = theme_y - pad
+        d.rectangle([x0, by, x0 + bar_w, by + theme_box_h], fill=pink + (255,))
+        d.rectangle([tx - pad, by, tx + tw + pad, by + theme_box_h], fill=purple + (purple_a,))
+        d.text((tx, theme_y), title, font=f_theme, fill=(255, 255, 255, 255), stroke_width=3, stroke_fill=outline + (255,), anchor="la")
+        png = Path(outdir) / f"theme_{i:02d}.png"
+        img.save(png)
+        out.append({"png": str(png), "start": round(s_out, 3), "end": round(min(e_out, total_end), 3), "title": title,
+                    "source_start": th["source_start"]})
+    return out
+
+
+# ---------------------------------------------------------------------------
 # 3) レンダリング
 # ---------------------------------------------------------------------------
 def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
@@ -352,23 +407,49 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
     fc.append(f"[amixed]{a_chain}[aout]")
 
     # --- 映像: スケール/フレームレート/テーマ表示/フェード
-    ass_path = Path(workdir) / "themes.ass"
-    theme_out = build_theme_ass(cfg, tl, fonts, ass_path)
     vchain = [f"scale={width}:{height}:flags=lanczos:force_original_aspect_ratio=decrease",
               f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2", f"fps={fps}", "format=yuv420p"]
-    fontsdir = fonts.get("dir")
+    overlay_mode = cfg.get("overlay_mode", "png")
+    overlay_steps = []
+    if overlay_mode == "png":
+        # PNG を生成して overlay（どの ffmpeg ビルドでも動く既定方式）
+        font_file = fonts.get("file")
+        if not font_file and fonts.get("dir"):
+            cands = sorted(Path(fonts["dir"]).glob("*Bold*.ttf")) or sorted(Path(fonts["dir"]).glob("*.ttf"))
+            font_file = str(cands[0]) if cands else None
+        if not font_file:
+            raise SystemExit("テーマ表示用フォント（TTF）が見つかりません。--font-file か --fonts-dir を指定してください")
+        theme_out = build_theme_pngs(cfg, tl, font_file, Path(workdir) / "theme_png")
+        for th in theme_out:
+            inputs += ["-i", th["png"]]
+            overlay_steps.append((idx, th["start"], th["end"]))
+            idx += 1
+    else:
+        ass_path = Path(workdir) / "themes.ass"
+        theme_out = build_theme_ass(cfg, tl, fonts, ass_path)
+        fontsdir = fonts.get("dir")
 
-    def fesc(v):  # ffmpeg フィルタ引数用エスケープ（ffmpeg 7/9 双方で有効な明示キー＋バックスラッシュ形式）
-        out = str(v)
-        for ch in ("\\", ":", ",", ";", "[", "]", "'"):
-            out = out.replace(ch, "\\" + ch)
-        return out
-    vchain.append(f"ass=filename={fesc(ass_path)}" + (f":fontsdir={fesc(fontsdir)}" if fontsdir else ""))
+        def fesc(v):  # ffmpeg フィルタ引数用エスケープ
+            out = str(v)
+            for ch in ("\\", ":", ",", ";", "[", "]", "'"):
+                out = out.replace(ch, "\\" + ch)
+            return out
+        vchain.append(f"ass=filename={fesc(ass_path)}" + (f":fontsdir={fesc(fontsdir)}" if fontsdir else ""))
+    tail_chain = []
     if ed and fade_v > 0:
-        vchain.append(f"fade=t=out:st={max(0.0, tl.out_duration - fade_v):.3f}:d={fade_v:.3f}")
+        tail_chain.append(f"fade=t=out:st={max(0.0, tl.out_duration - fade_v):.3f}:d={fade_v:.3f}")
     if black_tail > 0:
-        vchain.append(f"tpad=stop_mode=add:stop_duration={black_tail:.3f}:color=black")
-    fc.append("[vcat]" + ",".join(vchain) + "[vout]")
+        tail_chain.append(f"tpad=stop_mode=add:stop_duration={black_tail:.3f}:color=black")
+    if overlay_steps:
+        fc.append("[vcat]" + ",".join(vchain) + "[vb0]")
+        cur = "[vb0]"
+        for k, (in_idx, a, b) in enumerate(overlay_steps):
+            nxt = f"[vb{k + 1}]"
+            fc.append(f"{cur}[{in_idx}:v]overlay=x=0:y=0:format=auto:enable='between(t,{a:.3f},{b:.3f})'{nxt}")
+            cur = nxt
+        fc.append(f"{cur}" + (",".join(tail_chain) if tail_chain else "null") + "[vout]")
+    else:
+        fc.append("[vcat]" + ",".join(vchain + tail_chain) + "[vout]")
 
     filter_script = Path(workdir) / "filter_complex.txt"
     filter_script.write_text(";\n".join(fc), encoding="utf-8")   # 記録用
@@ -432,6 +513,7 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--workdir", required=True)
     ap.add_argument("--fonts-dir", default=os.environ.get("FONTS_DIR", ""))
+    ap.add_argument("--font-file", default=os.environ.get("FONT_FILE", ""), help="テーマ表示用 TTF（PNG 方式）")
     ap.add_argument("--skip-dialogue", action="store_true", help="整音済み WAV を再利用")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
@@ -441,7 +523,7 @@ def main():
     plan_dir = plan_path.parent
     workdir = Path(args.workdir)
     workdir.mkdir(parents=True, exist_ok=True)
-    fonts = {"dir": args.fonts_dir or None}
+    fonts = {"dir": args.fonts_dir or None, "file": args.font_file or None}
 
     src = Path(cfg["source"])
     if not src.is_absolute():

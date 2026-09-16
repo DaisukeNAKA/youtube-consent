@@ -31,13 +31,11 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
   brew install ffmpeg
 fi
 ffmpeg -hide_banner -version | head -1
-FILTERS="$(ffmpeg -hide_banner -filters 2>/dev/null || true)"
-if [[ "$FILTERS" != *" ass "* ]] && [[ "$FILTERS" != *$'\t'"ass"* ]]; then
-  echo "この ffmpeg は libass（字幕描画）非対応の可能性があります。続行はしますが、テーマ表示が出ない場合は brew install ffmpeg で入れ直してください"
-fi
+# テーマ表示は PNG 画像を overlay で重ねる方式のため、libass の有無は問いません
 
-echo "== 2/6 Python パッケージ（gdown）の確認"
+echo "== 2/6 Python パッケージ（gdown, Pillow）の確認"
 python3 -c "import gdown" 2>/dev/null || python3 -m pip install -q --user gdown requests || python3 -m pip install -q gdown requests
+python3 -c "import PIL" 2>/dev/null || python3 -m pip install -q --user pillow || python3 -m pip install -q pillow
 
 echo "== 3/6 原本の用意"
 if [ -n "$RAW_ARG" ]; then
