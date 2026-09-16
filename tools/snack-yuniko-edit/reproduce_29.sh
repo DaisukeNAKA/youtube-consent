@@ -32,8 +32,8 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
 fi
 ffmpeg -hide_banner -version | head -1
 FILTERS="$(ffmpeg -hide_banner -filters 2>/dev/null || true)"
-if ! printf '%s\n' "$FILTERS" | grep -q " ass "; then
-  echo "この ffmpeg は libass（字幕描画）非対応です。brew install ffmpeg で入れ直してください"; exit 1
+if [[ "$FILTERS" != *" ass "* ]] && [[ "$FILTERS" != *$'\t'"ass"* ]]; then
+  echo "この ffmpeg は libass（字幕描画）非対応の可能性があります。続行はしますが、テーマ表示が出ない場合は brew install ffmpeg で入れ直してください"
 fi
 
 echo "== 2/6 Python パッケージ（gdown）の確認"
