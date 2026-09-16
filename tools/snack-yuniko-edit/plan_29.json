@@ -1,0 +1,180 @@
+{
+ "source": "./raw/DJI_20260915135827_0021_D.MP4",
+ "se_dir": "./se",
+ "trim_start": 115.5,
+ "trim_end": 2374.7,
+ "tail_seconds": 13.3,
+ "cuts": [
+  [
+   2128.06,
+   2137.36
+  ]
+ ],
+ "label": "スナックゆに子 #29",
+ "themes": [
+  {
+   "source_start": 115.5,
+   "title": "ファン歴3620日目のオープニング"
+  },
+  {
+   "source_start": 143.0,
+   "title": "20分喋って撮れてなかったテイク2"
+  },
+  {
+   "source_start": 185.5,
+   "title": "りっちゃんは三日坊主の積み重ね"
+  },
+  {
+   "source_start": 229.4,
+   "title": "髪型で「結婚を諦めた」と思われた話"
+  },
+  {
+   "source_start": 306.5,
+   "title": "憧れの髪型は坊主とアフロ"
+  },
+  {
+   "source_start": 427.7,
+   "title": "シャワーが苦手、でも無臭"
+  },
+  {
+   "source_start": 548.4,
+   "title": "坊主なら乾かさなくていい"
+  },
+  {
+   "source_start": 606.4,
+   "title": "彼氏の答え：坊主OK、アフロNG"
+  },
+  {
+   "source_start": 735.2,
+   "title": "坊主にするのは結婚したとき"
+  },
+  {
+   "source_start": 799.0,
+   "title": "お母さんに褒められる頭の形"
+  },
+  {
+   "source_start": 866.6,
+   "title": "本編：誕生日会に相方だけ呼ばれない"
+  },
+  {
+   "source_start": 1048.3,
+   "title": "ひっそり心を痛めていた中塚"
+  },
+  {
+   "source_start": 1098.9,
+   "title": "バイト先に顔を出すのは普通？"
+  },
+  {
+   "source_start": 1149.2,
+   "title": "お笑いとプライベートは切り分け"
+  },
+  {
+   "source_start": 1228.6,
+   "title": "中塚さんが来ると注目を持っていかれる"
+  },
+  {
+   "source_start": 1304.7,
+   "title": "聞いてくれたら嘘はつかない"
+  },
+  {
+   "source_start": 1352.5,
+   "title": "外したのは中塚さんの負担を減らすため"
+  },
+  {
+   "source_start": 1502.3,
+   "title": "中塚の「親しい友達」は兄とりっちゃん"
+  },
+  {
+   "source_start": 1571.7,
+   "title": "撮影協力：招き猫さん（普通に払ってます）"
+  },
+  {
+   "source_start": 1634.8,
+   "title": "日エロ：ちょいエロギャグ"
+  },
+  {
+   "source_start": 1723.7,
+   "title": "エレベーターの落書きとオレンドスラッシュ"
+  },
+  {
+   "source_start": 1875.8,
+   "title": "半年前の下ネタ、聞いてられない"
+  },
+  {
+   "source_start": 1958.0,
+   "title": "深夜に切り抜きを作る38歳の気づき"
+  },
+  {
+   "source_start": 2020.9,
+   "title": "日エロ、廃盤のお知らせ"
+  },
+  {
+   "source_start": 2110.7,
+   "title": "エロで戦わない中塚さん"
+  },
+  {
+   "source_start": 2149.7,
+   "title": "水回りの掃除と新しい洗濯機"
+  },
+  {
+   "source_start": 2211.4,
+   "title": "今日は短め、この後ネタ合わせ"
+  },
+  {
+   "source_start": 2229.4,
+   "title": "ライブ出演情報"
+  },
+  {
+   "source_start": 2369.2,
+   "title": "エンディング"
+  }
+ ],
+ "se": [
+  {
+   "file": "doorbell.wav",
+   "source_time": 870.85,
+   "gain_db": -4
+  },
+  {
+   "file": "porunohabu-chao-gao-yin-zhi_QjjZBon.wav",
+   "source_time": 1634.85,
+   "gain_db": -5
+  }
+ ],
+ "ed": {
+  "music": "ricchan_ekubo.wav",
+  "music_start_source": 2375.77,
+  "music_gain_db": -1.5,
+  "fade_in_seconds": 0.05,
+  "fade_audio_seconds": 4.5,
+  "fade_video_seconds": 2.0,
+  "black_tail_seconds": 5.0
+ },
+ "dialogue": {
+  "target_lufs": -13.0,
+  "true_peak": -1.0,
+  "lra": 9,
+  "highpass_hz": 90,
+  "notch_hz": [
+   100
+  ],
+  "denoise": {
+   "nr": 14,
+   "nf": -42
+  },
+  "downmix_mono": true
+ },
+ "video": {
+  "crf": 19,
+  "preset": "medium",
+  "fps": 30
+ },
+ "style": {
+  "theme_size": 54,
+  "label_size": 32,
+  "x": 48,
+  "y": 40,
+  "pad": 14,
+  "bar_w": 12
+ }
+}

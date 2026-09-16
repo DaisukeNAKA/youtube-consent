@@ -139,8 +139,10 @@ def process_dialogue(src, out_wav, cfg, workdir):
     print("dialogue raw:", before)
 
     # ノイズ処理・整音チェーン
-    chain = [
-        f"highpass=f={highpass}:poles=2",
+    chain = [f"highpass=f={highpass}:poles=2"]
+    for hz in d.get("notch_hz", []):                  # 電源ハム等の狭帯域ノッチ
+        chain.append(f"bandreject=f={hz}:w=6")
+    chain += [
         f"lowpass=f={lowpass}",
         f"afftdn=nr={nr}:nf={nf}:tn=1:tr=1",          # FFT デノイズ（ノイズフロア追従）
         "deesser=i=0.4:m=0.5:f=0.5",                  # 歯擦音の抑制
@@ -150,6 +152,9 @@ def process_dialogue(src, out_wav, cfg, workdir):
     ]
     if extra:
         chain.append(extra)
+    if d.get("downmix_mono", False):
+        # 2本のラベリアマイクが L/R に分かれた収録 → 各ch を処理した後にモノラル合成（両耳センター）
+        chain.append("pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1")
     stage1 = Path(workdir) / "dialogue_stage1.wav"
     run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(raw_wav),
          "-af", ",".join(chain), "-c:a", "pcm_s16le", str(stage1)])
@@ -268,13 +273,17 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
     fps = int(vcfg.get("fps", 30))
     width, height = int(vcfg.get("width", 1920)), int(vcfg.get("height", 1080))
 
-    inputs = ["-i", str(src), "-i", str(dialogue_wav)]
+    # 映像は最初の使用区間の少し手前から入力シーク（先頭からの全デコードを避ける）
+    in_off = max(0.0, tl.keep[0][0] - 2.0)
+    inputs = ["-ss", f"{in_off:.3f}", "-i", str(src), "-i", str(dialogue_wav)]
     fc = []
     # --- 映像・台詞の区間切り出し（trim / atrim → concat）
     vparts, aparts = [], []
     for i, (a, b) in enumerate(tl.keep):
-        fc.append(f"[0:v]trim=start={a:.3f}:end={b:.3f},setpts=PTS-STARTPTS[v{i}]")
-        fc.append(f"[1:a]atrim=start={a:.3f}:end={b:.3f},asetpts=PTS-STARTPTS[a{i}]")
+        fc.append(f"[0:v]trim=start={a - in_off:.3f}:end={b - in_off:.3f},setpts=PTS-STARTPTS[v{i}]")
+        seg_len = b - a
+        fc.append(f"[1:a]atrim=start={a:.3f}:end={b:.3f},asetpts=PTS-STARTPTS,"
+                  f"afade=t=in:st=0:d=0.02,afade=t=out:st={max(0.0, seg_len - 0.02):.3f}:d=0.02[a{i}]")
         vparts.append(f"[v{i}]")
         aparts.append(f"[a{i}]")
     n = len(tl.keep)
@@ -303,12 +312,24 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
 
     ed = cfg.get("ed")
     ed_log = None
+    black_tail = float(ed.get("black_tail_seconds", 0)) if ed else 0.0
+    fade_v = float(ed.get("fade_video_seconds", 3)) if ed else 0.0
+    total_out = tl.out_duration + black_tail
     if ed:
+        # 台詞トラック: 映像フェードに合わせてフェードし、黒味の分だけ無音を足す
+        dchain = []
+        if fade_v > 0:
+            dchain.append(f"afade=t=out:st={max(0.0, tl.out_duration - fade_v):.3f}:d={fade_v:.3f}")
+        if black_tail > 0:
+            dchain.append(f"apad=pad_dur={black_tail:.3f}")
+        if dchain:
+            fc.append("[acat]" + ",".join(dchain) + "[acat2]")
+            mix_inputs[0] = "[acat2]"
         p = se_dir / ed["music"]
         m_start_out = tl.src_to_out(ed["music_start_source"]) + float(ed.get("music_offset_seconds", 0))
         gain = float(ed.get("music_gain_db", -10))
         fade_a = float(ed.get("fade_audio_seconds", 5))
-        end_out = tl.out_duration
+        end_out = total_out
         inputs += ["-i", str(p)]
         ms = int(round(m_start_out * 1000))
         music_len = end_out - m_start_out
@@ -323,15 +344,11 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
         idx += 1
 
     if len(mix_inputs) > 1:
-        fc.append("".join(mix_inputs) + f"amix=inputs={len(mix_inputs)}:duration=first:normalize=0:dropout_transition=0[amixed]")
+        fc.append("".join(mix_inputs) + f"amix=inputs={len(mix_inputs)}:duration=longest:normalize=0:dropout_transition=0[amixed]")
     else:
         fc.append("[acat]anull[amixed]")
     tp = float(cfg.get("dialogue", {}).get("true_peak", -1.0))
-    # ED の映像・音声フェード
-    fade_v = float(ed.get("fade_video_seconds", 3)) if ed else 0.0
-    a_chain = f"alimiter=limit={10 ** (tp / 20):.4f}:attack=5:release=50:level=false"
-    if ed and fade_v > 0:
-        a_chain += f",afade=t=out:st={max(0.0, tl.out_duration - fade_v):.3f}:d={fade_v:.3f}"
+    a_chain = f"alimiter=limit={10 ** ((tp - 0.3) / 20):.4f}:attack=5:release=50:level=false"
     fc.append(f"[amixed]{a_chain}[aout]")
 
     # --- 映像: スケール/フレームレート/テーマ表示/フェード
@@ -344,6 +361,8 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
     vchain.append(f"ass='{ass_arg}'" + (f":fontsdir='{fontsdir}'" if fontsdir else ""))
     if ed and fade_v > 0:
         vchain.append(f"fade=t=out:st={max(0.0, tl.out_duration - fade_v):.3f}:d={fade_v:.3f}")
+    if black_tail > 0:
+        vchain.append(f"tpad=stop_mode=add:stop_duration={black_tail:.3f}:color=black")
     fc.append("[vcat]" + ",".join(vchain) + "[vout]")
 
     filter_script = Path(workdir) / "filter_complex.txt"
@@ -357,8 +376,8 @@ def render(cfg, plan_dir, workdir, outpath, fonts, dialogue_wav, dry_run=False):
         "-g", str(fps * 2), "-bf", "2",
         "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709",
         "-c:a", "aac", "-b:a", "256k", "-ar", "48000", "-ac", "2",
-        "-movflags", "+faststart", "-t", f"{tl.out_duration:.3f}", str(outpath)]
-    meta = {"keep_segments": tl.keep, "out_duration": round(tl.out_duration, 3),
+        "-movflags", "+faststart", "-t", f"{total_out:.3f}", str(outpath)]
+    meta = {"keep_segments": tl.keep, "out_duration": round(tl.out_duration, 3), "total_out": round(total_out, 3),
             "themes_out": theme_out, "se": se_log, "ed": ed_log,
             "talk_end_out": round(tl.out_talk_end(), 3), "cmd": cmd}
     if dry_run:
