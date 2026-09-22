@@ -82,6 +82,12 @@ SKIP=""; [ -f "$WORK/work/dialogue_processed.wav" ] && SKIP="--skip-dialogue" &&
 python3 "$TOOLS/edit_pipeline.py" "$WORK/plan_29_local.json" --out "$WORK/out/$OUT_NAME" --workdir "$WORK/work" --fonts-dir "$WORK/fonts" $SKIP $DRY
 if [ -z "$DRY" ]; then
   cp "$WORK/out/$OUT_NAME" "$HOME/Downloads/$OUT_NAME"
-  echo "== 完成: $HOME/Downloads/$OUT_NAME"
+  # stand.fm 用の音声版も同時に書き出す
+  AUDIO_NAME="スナックゆに子_29_音声_v2.m4a"
+  ffmpeg -v error -y -i "$WORK/out/$OUT_NAME" -vn -c:a aac -b:a 128k -ar 48000 -ac 2 \
+    -movflags +faststart "$HOME/Downloads/$AUDIO_NAME"
+  echo "== 完成"
+  echo "   動画: $HOME/Downloads/$OUT_NAME"
+  echo "   音声: $HOME/Downloads/$AUDIO_NAME"
   echo "   QA レポート: $WORK/work/qa_report.json / コンタクトシート: $WORK/work/qa_contact_sheet.jpg"
 fi
