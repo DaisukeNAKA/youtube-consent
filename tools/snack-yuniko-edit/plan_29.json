@@ -166,39 +166,45 @@
   "eq_bands": [
    {
     "type": "lowshelf",
-    "f": 263.3,
-    "Q": 1.64,
-    "gain_db": 4.35
+    "f": 277.4,
+    "Q": 1.0,
+    "gain_db": 11.59
    },
    {
     "type": "peak",
-    "f": 828.5,
-    "Q": 1.53,
-    "gain_db": -6.32
+    "f": 650.0,
+    "Q": 1.81,
+    "gain_db": -4.01
    },
    {
     "type": "peak",
-    "f": 1651.7,
-    "Q": 1.11,
-    "gain_db": -7.06
+    "f": 900.0,
+    "Q": 0.5,
+    "gain_db": 0.94
    },
    {
     "type": "peak",
-    "f": 3409.7,
-    "Q": 2.2,
-    "gain_db": -4.09
+    "f": 3200.0,
+    "Q": 0.9,
+    "gain_db": 5.96
    },
    {
     "type": "highshelf",
-    "f": 5305.1,
-    "Q": 0.99,
-    "gain_db": 5.0
+    "f": 6000.0,
+    "Q": 0.7,
+    "gain_db": 6.61
+   },
+   {
+    "type": "peak",
+    "f": 13826.7,
+    "Q": 0.54,
+    "gain_db": 7.39
    }
   ],
-  "_comment_eq": "#29 素材の 1/3 オクターブ実測と Byrne(1994) LTASS の差から最小二乗で導出。高域シェルフのみ +6.9→+5.0 に抑制（過去回との明るさの差を抑えるため）",
+  "_comment_eq": "#18（2026-06-16、e935 → P4next の SD 録音 48kHz/24bit）の1/3オクターブ実測を目標に、#29 との差を最小二乗で当てはめ、実際に掛けた結果の残差でもう1回詰めたもの。LTASS（Byrne 1994）ではなく番組自身の良かった頃の音を目標にしている。バンドの周波数帯は重ならないよう区切ってある（重なりを許すと打ち消し合う解に落ちるため）",
   "deesser": {
    "crossover_hz": 5200,
-   "ratio_thresh_db": -5.0,
+   "ratio_thresh_db": -4.0,
    "ratio": 5.0,
    "max_gr_db": 10.0,
    "attack_s": 0.0015,
@@ -207,7 +213,8 @@
   "compressor": "acompressor=threshold=-20dB:ratio=2.2:attack=10:release=150:makeup=1:knee=6",
   "downmix_mono": true,
   "eq_before_nr": true,
-  "_comment_order": "EQ を afftdn より前に置く。実測で音声の高域が 1.1 dB 多く残り、無音部の高域ノイズが 4 dB 少なく、ミュージカルノイズも小さくなった"
+  "_comment_order": "EQ を afftdn より前に置く。実測で音声の高域が 1.1 dB 多く残り、無音部の高域ノイズが 4 dB 少なく、ミュージカルノイズも小さくなった",
+  "_comment_deesser": "#18 の歯擦音 p99.9 = -18.8 dBFS に合わせて決めた（結果 -18.4 dBFS、作動率 3.6%）"
  },
  "video": {
   "crf": 19,
