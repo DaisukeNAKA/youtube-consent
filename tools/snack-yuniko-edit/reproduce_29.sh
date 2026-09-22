@@ -8,7 +8,7 @@ REPO="$(pwd)"
 TOOLS="$REPO/tools/snack-yuniko-edit"
 WORK="${SNACK_WORK:-$HOME/Movies/snack_yuniko_29}"
 RAW_NAME="DJI_20260915135827_0021_D.MP4"
-OUT_NAME="スナックゆに子_29_完パケ.mp4"
+OUT_NAME="スナックゆに子_29_完パケ_v2.mp4"
 RAW_ARG=""; DRY=""
 for a in "$@"; do
   case "$a" in --dry-run) DRY="--dry-run";; *) RAW_ARG="$a";; esac
@@ -33,9 +33,11 @@ fi
 ffmpeg -hide_banner -version | head -1
 # テーマ表示は PNG 画像を overlay で重ねる方式のため、libass の有無は問いません
 
-echo "== 2/6 Python パッケージ（gdown, Pillow）の確認"
+echo "== 2/6 Python パッケージ（gdown, Pillow, numpy, scipy, soundfile）の確認"
 python3 -c "import gdown" 2>/dev/null || python3 -m pip install -q --user gdown requests || python3 -m pip install -q gdown requests
 python3 -c "import PIL" 2>/dev/null || python3 -m pip install -q --user pillow || python3 -m pip install -q pillow
+# 整音のディエッサー（deesser.py）が使う。ffmpeg 内蔵の deesser は本素材にほぼ効かないため自前実装にしている
+python3 -c "import numpy, scipy, soundfile" 2>/dev/null || python3 -m pip install -q --user numpy scipy soundfile || python3 -m pip install -q numpy scipy soundfile
 
 echo "== 3/6 原本の用意"
 if [ -n "$RAW_ARG" ]; then
@@ -71,6 +73,11 @@ p["source"] = sys.argv[3]; p["se_dir"] = sys.argv[4]
 json.dump(p, open(sys.argv[2], "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print("plan:", sys.argv[2])
 PY
+# 整音チェーンを 2026-09-22 に全面的に作り直したため、旧版の整音済み音声は使い回さない
+if [ -f "$WORK/work/dialogue_processed.wav" ] && [ "$WORK/work/dialogue_processed.wav" -ot "$TOOLS/plan_29.json" ]; then
+  echo "（整音設定が更新されているため、整音済み音声を作り直します）"
+  rm -f "$WORK/work/dialogue_processed.wav"
+fi
 SKIP=""; [ -f "$WORK/work/dialogue_processed.wav" ] && SKIP="--skip-dialogue" && echo "（整音済み音声を再利用します）"
 python3 "$TOOLS/edit_pipeline.py" "$WORK/plan_29_local.json" --out "$WORK/out/$OUT_NAME" --workdir "$WORK/work" --fonts-dir "$WORK/fonts" $SKIP $DRY
 if [ -z "$DRY" ]; then

@@ -119,48 +119,111 @@ def measure_loudness(path):
     return res
 
 
+def _eq_filters(bands):
+    """プランの EQ 定義を ffmpeg のフィルタ文字列にする。"""
+    out = []
+    for b in bands:
+        f, q, g = b["f"], b["Q"], b["gain_db"]
+        if b["type"] == "lowshelf":
+            out.append(f"bass=f={f}:width_type=q:width={q}:g={g}")
+        elif b["type"] == "highshelf":
+            out.append(f"treble=f={f}:width_type=q:width={q}:g={g}")
+        else:
+            out.append(f"equalizer=f={f}:t=q:w={q}:g={g}")
+    return out
+
+
+def _apply_deesser(in_wav, out_wav, cfg):
+    """比駆動ディエッサーを掛ける（ffmpeg 内蔵の deesser は本素材にほぼ効かないため自前）。"""
+    import numpy as np
+    import soundfile as sf
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from deesser import deess_ratio
+
+    info = sf.info(str(in_wav))
+    sr = info.samplerate
+    block = sr * 600                                   # 10 分ずつ処理してメモリを抑える
+    pad = sr * 2                                       # 先読み分（FIR とエンベロープの過渡を捨てる）
+    with sf.SoundFile(str(out_wav), 'w', sr, info.channels, subtype='FLOAT') as dst:
+        pos = 0
+        while pos < info.frames:
+            a = max(0, pos - pad)
+            b = min(info.frames, pos + block + pad)
+            x, _ = sf.read(str(in_wav), dtype='float64', always_2d=True, start=a, stop=b)
+            y = np.stack([deess_ratio(x[:, c], sr,
+                                      fc=cfg.get("crossover_hz", 5200),
+                                      ratio_thresh_db=cfg.get("ratio_thresh_db", -5.0),
+                                      ratio=cfg.get("ratio", 5.0),
+                                      max_gr_db=cfg.get("max_gr_db", 10.0),
+                                      atk=cfg.get("attack_s", 0.0015),
+                                      rel=cfg.get("release_s", 0.012))[0]
+                          for c in range(x.shape[1])], axis=1)
+            lo = pos - a
+            hi = lo + min(block, info.frames - pos)
+            dst.write(y[lo:hi].astype('float32'))
+            pos += block
+
+
 def process_dialogue(src, out_wav, cfg, workdir):
-    """原本の音声を抽出し、ノイズ処理→整音→ラウドネス正規化した WAV を作る。"""
+    """原本の音声を抽出し、ノイズ処理→補正 EQ→ディエッサー→整音→ラウドネス正規化した WAV を作る。
+
+    EQ の値は #29 素材の 1/3 オクターブ実測と長時間平均話声スペクトル（Byrne 1994）の
+    差から最小二乗で導いたもので、胸元ラベリア特有の 630-2000 Hz の膨らみを抑え、
+    高域の不足を戻す。plan の eq_bands が無い場合は従来どおりの簡易チェーンにフォールバックする。
+    """
     d = cfg.get("dialogue", {})
     target_i = float(d.get("target_lufs", -12.0))
     target_tp = float(d.get("true_peak", -1.0))
     target_lra = float(d.get("lra", 9))
     dn = d.get("denoise", {})
     nr = float(dn.get("nr", 12))
-    nf = float(dn.get("nf", -40))
+    nf = float(dn.get("nf", -50))
     highpass = float(d.get("highpass_hz", 80))
-    lowpass = float(d.get("lowpass_hz", 16000))
-    extra = d.get("extra_filters", "")
 
     raw_wav = Path(workdir) / "dialogue_raw.wav"
+    # 32bit float で取り出す。16bit だと AAC デコード後に 1.0 を超えるサンプルが潰れる
     run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(src), "-vn",
-         "-ac", "2", "-ar", "48000", "-c:a", "pcm_s16le", str(raw_wav)])
+         "-ac", "2", "-ar", "48000", "-c:a", "pcm_f32le", str(raw_wav)])
     before = measure_loudness(raw_wav)
     print("dialogue raw:", before)
 
-    # ノイズ処理・整音チェーン
     chain = [f"highpass=f={highpass}:poles=2"]
     for hz in d.get("notch_hz", []):                  # 電源ハム等の狭帯域ノッチ
         chain.append(f"bandreject=f={hz}:w=6")
-    chain += [
-        f"lowpass=f={lowpass}",
-        f"afftdn=nr={nr}:nf={nf}:tn=1:tr=1",          # FFT デノイズ（ノイズフロア追従）
-        "deesser=i=0.4:m=0.5:f=0.5",                  # 歯擦音の抑制
-        "acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2:knee=4",
-        "equalizer=f=250:t=q:w=1.2:g=-1.5",           # こもりを軽く抑える
-        "equalizer=f=3000:t=q:w=1.0:g=1.5",           # 明瞭度
-    ]
-    if extra:
-        chain.append(extra)
-    if d.get("downmix_mono", False):
-        # 2本のラベリアマイクが L/R に分かれた収録 → 各ch を処理した後にモノラル合成（両耳センター）
-        chain.append("pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1")
+    # afftdn に tn/tr は付けない。tn=1 だと nr が完全に無視されることを実測で確認済み
+    chain.append(f"afftdn=nr={nr}:nf={nf}")
+    bands = d.get("eq_bands")
+    if bands:
+        chain += _eq_filters(bands)
+    else:                                              # 旧プラン互換
+        chain += ["deesser=i=0.4:m=0.5:f=0.5",
+                  "equalizer=f=250:t=q:w=1.2:g=-1.5",
+                  "equalizer=f=3000:t=q:w=1.0:g=1.5"]
+    if d.get("extra_filters"):
+        chain.append(d["extra_filters"])
+
     stage1 = Path(workdir) / "dialogue_stage1.wav"
     run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(raw_wav),
-         "-af", ",".join(chain), "-c:a", "pcm_s16le", str(stage1)])
+         "-af", ",".join(chain), "-c:a", "pcm_f32le", str(stage1)])
+
+    de = d.get("deesser")
+    if de:
+        stage2 = Path(workdir) / "dialogue_stage2.wav"
+        _apply_deesser(stage1, stage2, de)
+    else:
+        stage2 = stage1
+
+    chain2 = [d.get("compressor",
+                    "acompressor=threshold=-20dB:ratio=2.2:attack=10:release=150:makeup=1:knee=6")]
+    if d.get("downmix_mono", False):
+        # 2本のラベリアマイクが L/R に分かれた収録 → 各ch を処理した後にモノラル合成（両耳センター）
+        chain2.append("pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1")
+    stage3 = Path(workdir) / "dialogue_stage3.wav"
+    run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(stage2),
+         "-af", ",".join(chain2), "-c:a", "pcm_f32le", str(stage3)])
 
     # 2 パス loudnorm（linear=true で実測値を渡す）
-    p = subprocess.run([FFMPEG, "-hide_banner", "-nostats", "-i", str(stage1), "-af",
+    p = subprocess.run([FFMPEG, "-hide_banner", "-nostats", "-i", str(stage3), "-af",
                         f"loudnorm=I={target_i}:TP={target_tp}:LRA={target_lra}:print_format=json",
                         "-f", "null", "-"], stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True)
     js = p.stderr[p.stderr.rfind("{"):]
@@ -168,12 +231,13 @@ def process_dialogue(src, out_wav, cfg, workdir):
     ln = (f"loudnorm=I={target_i}:TP={target_tp}:LRA={target_lra}:"
           f"measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:"
           f"measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true:print_format=summary")
-    run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(stage1),
+    run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(stage3),
          "-af", f"{ln},alimiter=limit={10 ** (target_tp / 20):.4f}:attack=5:release=50:level=false",
          "-ar", "48000", "-c:a", "pcm_s16le", str(out_wav)])
     after = measure_loudness(out_wav)
     print("dialogue processed:", after)
-    return {"before": before, "after": after, "loudnorm_measured": m, "chain": chain}
+    return {"before": before, "after": after, "loudnorm_measured": m,
+            "chain": chain, "deesser": de, "chain2": chain2}
 
 
 # ---------------------------------------------------------------------------
