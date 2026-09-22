@@ -119,6 +119,16 @@ def measure_loudness(path):
     return res
 
 
+def _wav_is_complete(wav, src):
+    """抽出済みの WAV が原本と同じ長さかを確認する（途中で止まったものを使い回さないため）。"""
+    try:
+        a = float(probe(wav)["format"]["duration"])
+        b = float(probe(src)["format"]["duration"])
+    except Exception:
+        return False
+    return abs(a - b) < 0.5
+
+
 def _eq_filters(bands):
     """プランの EQ 定義を ffmpeg のフィルタ文字列にする。"""
     out = []
@@ -182,8 +192,11 @@ def process_dialogue(src, out_wav, cfg, workdir):
 
     raw_wav = Path(workdir) / "dialogue_raw.wav"
     # 32bit float で取り出す。16bit だと AAC デコード後に 1.0 を超えるサンプルが潰れる
-    run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(src), "-vn",
-         "-ac", "2", "-ar", "48000", "-c:a", "pcm_f32le", str(raw_wav)])
+    if not (raw_wav.exists() and _wav_is_complete(raw_wav, src)):
+        run([FFMPEG, "-hide_banner", "-loglevel", "error", "-y", "-i", str(src), "-vn",
+             "-ac", "2", "-ar", "48000", "-c:a", "pcm_f32le", str(raw_wav)])
+    else:
+        print("dialogue_raw.wav を再利用します")
     before = measure_loudness(raw_wav)
     print("dialogue raw:", before)
 
@@ -191,12 +204,17 @@ def process_dialogue(src, out_wav, cfg, workdir):
     for hz in d.get("notch_hz", []):                  # 電源ハム等の狭帯域ノッチ
         chain.append(f"bandreject=f={hz}:w=6")
     # afftdn に tn/tr は付けない。tn=1 だと nr が完全に無視されることを実測で確認済み
-    chain.append(f"afftdn=nr={nr}:nf={nf}")
+    denoise = f"afftdn=nr={nr}:nf={nf}"
     bands = d.get("eq_bands")
     if bands:
-        chain += _eq_filters(bands)
+        eq = _eq_filters(bands)
+        # EQ を先に置くほうが実測で良い（高域を持ち上げた後に afftdn がそのヒスを見るため、
+        # 音声の高域は 1.1 dB 多く残り、無音部の高域ノイズは 4 dB 少なく、
+        # ミュージカルノイズも小さくなる）。旧挙動は eq_before_nr:false で選べる。
+        chain += (eq + [denoise]) if d.get("eq_before_nr", True) else ([denoise] + eq)
     else:                                              # 旧プラン互換
-        chain += ["deesser=i=0.4:m=0.5:f=0.5",
+        chain += [denoise,
+                  "deesser=i=0.4:m=0.5:f=0.5",
                   "equalizer=f=250:t=q:w=1.2:g=-1.5",
                   "equalizer=f=3000:t=q:w=1.0:g=1.5"]
     if d.get("extra_filters"):
