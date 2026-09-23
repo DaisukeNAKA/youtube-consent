@@ -81,8 +81,11 @@ def main(sb_path, out, public=False):
     print('wrote', out, round(len(page) / 1024), 'KB')
 
 
-NG_WORDS = ['りっちゃん', 'ボンボン', '元MC', '200万']          # 旧名義・過去の番組名など（どの版でも出さない）
-NG_PUBLIC = ['MCN', '社内メモ', '書面同意', 'マネージャー']       # 社外向けで出さない社内の検討事項
+# 出してはいけない語の一覧は公開リポジトリに書かない（語そのものが情報になるため）。private/ng_words.json に置く:
+#   {"all": [...どの版でも出さない語...], "public": [...社外向けで出さない語...]}
+_NG = json.load(open(os.path.join(ROOT, 'private', 'ng_words.json'), encoding='utf-8')) if os.path.exists(os.path.join(ROOT, 'private', 'ng_words.json')) else {}
+if not _NG: print('注意: private/ng_words.json がないため、NG語の検査をしていません', file=sys.stderr)
+NG_WORDS, NG_PUBLIC = _NG.get('all', []), _NG.get('public', [])
 
 
 TEMPLATE = r'''<title>ユニコ 15秒CM</title>
@@ -101,7 +104,11 @@ TEMPLATE = r'''<title>ユニコ 15秒CM</title>
 :root[data-theme="dark"] {{ color-scheme:dark; --ground:#130E20; --surface:#1C1530; --ink:#F2EDFF; --muted:#A99BC9; --line:#2F2548; --ok:#5FD49A; --warn:#FFB84D; --ng:#FF7A93; }}
 * {{ box-sizing:border-box; }}
 body {{ background:var(--ground); color:var(--ink); font:16px/1.75 var(--body); padding-inline:16px; padding-block:24px 64px; }}
-main {{ max-width:1080px; margin:0 auto; display:grid; gap:56px; }}
+main {{ max-width:1080px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr); gap:56px; }}
+main > *, .grid2 > *, .hero > *, .shot > * {{ min-width:0; }}
+.post pre, .tel li, td {{ overflow-wrap:anywhere; }}
+.qa td:first-child {{ min-width:12em; }} .qa td {{ min-width:9em; }}
+.tablewrap table:not(.qa) td:first-child {{ min-width:6em; }}
 h1,h2,h3 {{ text-wrap:balance; margin:0; }}
 h1 {{ font:400 clamp(34px,6vw,58px)/1.1 var(--display); letter-spacing:.01em; }}
 h1 .dot {{ color:var(--pink); }}
@@ -115,7 +122,7 @@ h2 small {{ font:700 12px/1 var(--body); letter-spacing:.14em; color:var(--muted
 .concl {{ background:var(--surface); border:2px solid var(--ink); border-radius:18px; padding:20px 22px; box-shadow:6px 6px 0 var(--pink); }}
 .concl ul {{ margin:.4em 0 0; padding-left:1.2em; }}
 .msg {{ font:400 20px/1.5 var(--display); color:var(--purple); margin:0 0 .3em; }}
-.grid2 {{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }}
+.grid2 {{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; }}
 section > p, section li {{ max-width:70ch; }}
 .timeline {{ position:relative; height:118px; margin-top:16px; border-radius:12px; background:var(--surface); border:1px solid var(--line); overflow:hidden; }}
 .bar {{ position:absolute; top:0; bottom:0; border-left:1px dashed var(--line); }}
@@ -199,7 +206,7 @@ footer {{ color:var(--muted); font-size:13px; }}
 
 <section><h2>自動QA <small>書き出し実測値</small></h2>
 <p>{qsum}</p>
-<div class="tablewrap"><table><thead><tr><th>検査（基準）</th>{qhead}</tr></thead><tbody>{qrows}</tbody></table></div></section>
+<div class="tablewrap"><table class="qa"><thead><tr><th>検査（基準）</th>{qhead}</tr></thead><tbody>{qrows}</tbody></table></div></section>
 
 <section><h2>表現ルール適合 <small>Compliance</small></h2>
 <div class="tablewrap"><table><thead><tr><th>項目</th><th>状態</th><th>根拠・対応</th></tr></thead><tbody>{comp}</tbody></table></div></section>
