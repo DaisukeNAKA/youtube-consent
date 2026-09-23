@@ -1,34 +1,54 @@
 #!/usr/bin/env bash
-# ユニコ15秒CM 一括ビルド: 音声生成 → ラウドネス正規化 → 9:16 / 16:9 書き出し → 自動QA → 共有用の軽量版
-# usage: ./build.sh            （両フォーマット）
-#        ./build.sh 916        （縦のみ）
+# ユニコ15秒CM 一括ビルド
+#   1. 音声（自作ジングル＋自作SE、声WAVがあれば自動ミックス）を比率ごとに生成し、ラウドネス調整
+#   2. 書き出し: E0-YT（9:16・Shorts）/ E0-169（16:9・X・会場・広告素材）/ E0-SNS（9:16・TikTok・Instagram・X 通常投稿）
+#   3. 自動QA（out/qa_report.json、不合格があれば終了コード1）
+#   4. 納品物: 共有用の軽量版・効果音だけの版・エンドカード静止画
+# usage: ./build.sh            （全部）
+#        ./build.sh 916        （縦だけ。E0-SNS も縦なので一緒に作る）
 set -euo pipefail
 cd "$(dirname "$0")"
 export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}"
 FF="${FFMPEG:-$(python3 -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')}"
 FMTS="${1:-916 169}"
-mkdir -p out/audio
+mkdir -p out/audio out/stills
 
-echo "== 1/5 音声（自作ジングル＋自作SE、声WAVがあれば自動ミックス）"
-python3 tools/audio.py
-
-echo "== 2/5 マスタリング（-14 LUFS / TP -1.2 dBTP 以下 / 719,872サンプル＝AAC 703フレーム）"
-python3 tools/master.py out/audio/mix_raw.wav out/audio/mix.wav
-
-echo "== 3/5 映像書き出し"
+echo "== 1/4 音声（比率ごと。-14 LUFS / TP -1.2 dBTP 以下 / 718,848サンプル）"
 for f in $FMTS; do
-  node tools/render.mjs "$f" "out/unico_cm15_${f}.mp4" out/audio/mix.wav
+  python3 tools/audio.py --fmt "$f"
+  python3 tools/master.py "out/audio/mix_raw_${f}.wav" "out/audio/mix_${f}.wav"
+  python3 tools/audio.py --fmt "$f" --se-only
+  python3 tools/master.py "out/audio/mix_raw_${f}_se.wav" "out/audio/mix_${f}_se.wav" --gain-from "out/audio/mix_${f}.wav.json"
 done
 
-echo "== 4/5 自動QA"
+echo "== 2/4 映像書き出し"
+MASTERS=()
+for f in $FMTS; do
+  node tools/render.mjs "$f" "out/unico_cm15_${f}.mp4" "out/audio/mix_${f}.wav"; MASTERS+=("out/unico_cm15_${f}.mp4")
+  if [ "$f" = 916 ]; then
+    VARIANT=SNS node tools/render.mjs 916 out/unico_cm15_916_sns.mp4 out/audio/mix_916.wav; MASTERS+=(out/unico_cm15_916_sns.mp4)
+  fi
+done
+
+echo "== 3/4 自動QA"
 status=0
-python3 tools/qa.py $(for f in $FMTS; do echo "out/unico_cm15_${f}.mp4"; done) > out/qa_report.json || status=$?
-python3 -c "import json;[print(r['file'], '合格' if not r['issues'] else r['issues']) for r in json.load(open('out/qa_report.json'))]"
+python3 tools/qa.py "${MASTERS[@]}" > out/qa_report.json || status=$?
+python3 -c "import json;[print(r['file'], '合格' if not r['issues'] else r['issues'], '/ 参考', len(r['warnings']), '件') for r in json.load(open('out/qa_report.json'))]"
 
-echo "== 5/5 共有用の軽量版（プレビュー・チャット共有向け。入稿にはマスターを使う）"
-for f in $FMTS; do
-  "$FF" -y -hide_banner -loglevel error -i "out/unico_cm15_${f}.mp4" -map 0 -c:v libx264 -preset slow -crf 21 -maxrate 6M -bufsize 12M \
-    -profile:v high -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -c:a copy -movflags +faststart "out/unico_cm15_${f}_web.mp4"
+echo "== 4/4 納品物（入稿にはマスター out/unico_cm15_*.mp4 を使う）"
+for m in "${MASTERS[@]}"; do
+  b="${m%.mp4}"
+  # 共有用の軽量版（プレビュー・チャット・X 投稿向け、映像6Mbps上限）
+  "$FF" -y -hide_banner -loglevel error -i "$m" -map 0 -c:v libx264 -preset slow -crf 21 -maxrate 6M -bufsize 12M \
+    -profile:v high -pix_fmt yuv420p -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv -c:a copy -movflags +faststart "${b}_web.mp4"
 done
-ls -la out/*.mp4
+for f in $FMTS; do
+  # 効果音だけの版（BGMなし。映像はマスターをそのまま使い、音声だけ差し替え）
+  "$FF" -y -hide_banner -loglevel error -i "out/unico_cm15_${f}.mp4" -i "out/audio/mix_${f}_se.wav" -map 0:v -map 1:a -c:v copy \
+    -c:a aac -b:a 384k -ar 48000 -ac 2 -movflags +faststart "out/unico_cm15_${f}_se.mp4"
+  # エンドカードの静止画（A: ロゴ静止の最終フレーム f404 / B: 決め画面 f449）
+  FRAMES=404,449 node tools/render.mjs "$f" "out/stills/unico_cm15_${f}.png" > /dev/null
+  if [ "$f" = 916 ]; then VARIANT=SNS FRAMES=449 node tools/render.mjs 916 out/stills/unico_cm15_916_sns.png > /dev/null; fi
+done
+ls -la out/*.mp4 out/stills/*.png
 exit $status

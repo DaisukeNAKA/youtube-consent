@@ -18,6 +18,13 @@ jobs:
         run: |
           node tests/invariants.test.js
           node tests/backend.test.js
+      - name: Guard against committed media in cm/
+        # CM 制作一式（cm/）に肖像・声・ロゴ・書体・動画が紛れ込んでいないか（公開リポジトリのため）
+        run: |
+          if git ls-files cm/ | grep -iE '\.(png|jpe?g|webp|heic|gif|woff2?|ttf|otf|mp4|mov|wav|m4a|mp3)$'; then
+            echo "cm/ に画像・音声・動画・書体ファイルがコミットされています（公開不可の素材の可能性）" >&2
+            exit 1
+          fi
       - name: Run consent and certificate checks
         shell: bash
         run: |

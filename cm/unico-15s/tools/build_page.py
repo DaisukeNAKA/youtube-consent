@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """企画書＋絵コンテページ（単一HTML）を storyboard.json / out/qa_report.json / 書き出し動画から生成する。
-usage: python3 tools/build_page.py <storyboard.json> <out.html>
-- storyboard.json には社内メモ（同意・事務所確認などの残論点）を含むため、公開リポジトリには置かない（private/ 推奨）。
+usage: python3 tools/build_page.py <storyboard.json> <out.html> [--public]
+- 既定は社内限定の版（残論点・表現ルール適合・置いた前提を含む）。storyboard.json は公開リポジトリに置かない（private/）。
+- --public は社外向け（残論点・適合表・前提・仕様を出さない）。
+- どちらの版も、旧名義・過去の番組名など出してはいけない語が含まれていたら書き出さずに終了コード1で止める。
 - 絵コンテのキーフレームは out/unico_cm15_916.mp4 から抽出し、JPEG data URI で埋め込む。
 - 動画は同じフォルダに置いた web 版（unico_cm15_916_web.mp4 / unico_cm15_169_web.mp4）を相対参照する。
 """
@@ -20,7 +22,7 @@ def frame_uri(video, t, w):
     b = io.BytesIO(); im.save(b, 'JPEG', quality=82); return 'data:image/jpeg;base64,' + base64.b64encode(b.getvalue()).decode()
 
 
-def main(sb_path, out):
+def main(sb_path, out, public=False):
     sb = json.load(open(sb_path, encoding='utf-8'))
     qa = json.load(open(os.path.join(ROOT, 'out', 'qa_report.json'), encoding='utf-8')) if os.path.exists(os.path.join(ROOT, 'out', 'qa_report.json')) else []
     v916 = os.path.join(ROOT, 'out', 'unico_cm15_916.mp4'); v169 = os.path.join(ROOT, 'out', 'unico_cm15_169.mp4')
@@ -54,19 +56,33 @@ def main(sb_path, out):
     comp = ''.join(f'<tr><td>{E(c["item"])}</td><td class="st {E(c["status"])}">{E(c["status"])}</td><td>{E(c["note"])}</td></tr>' for c in sb['compliance'])
     qrows = ''
     names = list(qa[0]['checks'].keys()) if qa else []
-    qhead = ''.join(f'<th>{"9:16" if r["format"] == "916" else "16:9"}</th>' for r in qa)
+    VN = {'YT': 'E0-YT 9:16', 'SNS': 'E0-SNS 9:16', '169': 'E0-169 16:9'}
+    qhead = ''.join(f'<th>{E(VN.get(r.get("variant"), r["file"]))}</th>' for r in qa)
     for n in names:
         cells = ''.join(f'<td class="st {"適合" if r["checks"][n]["pass"] else "不適合"}">{"合格" if r["checks"][n]["pass"] else "不合格"}<br><small>{E(str(r["checks"][n]["value"]))}</small></td>' for r in qa)
         qrows += f'<tr><td>{E(n)}<br><small>{E(str(qa[0]["checks"][n]["need"]))}</small></td>{cells}</tr>'
-    qsum = '全項目合格' if qa and not any(r['issues'] for r in qa) else '<br>'.join(E(x) for r in qa for x in r['issues'])
+    qsum = ('全項目合格（' + '・'.join(VN.get(r.get('variant'), r['file']) for r in qa) + '）') if qa and not any(r['issues'] for r in qa) else '<br>'.join(E(x) for r in qa for x in r['issues'])
+    warns = sorted({w for r in qa for w in r.get('warnings', [])})
+    if warns: qsum += '<br><small>参考: ' + '／'.join(E(w) for w in warns) + '</small>'
     li = lambda xs: ''.join(f'<li>{E(x)}</li>' for x in xs)
     page = TEMPLATE.format(
         title=E(sb['title']), lead=E(sb['lead']), conclusion=li(sb['conclusion']), reasons=li(sb['reasons']),
         ruler=ruler, segs=segs, marks=marks, rows='\n'.join(rows), alt=alt, af=af, posts=posts, comp=comp, qrows=qrows, qhead=qhead, qsum=qsum,
         assumptions=li(sb['assumptions']), issues=''.join(f'<li><b>{E(x["what"])}</b>　{E(x["why"])}<span class="own">{E(x["who"])}</span></li>' for x in sb['open_issues']),
         specs=li(sb['specs']), message=E(sb['key_message']))
+    if public:   # 社外向け: 社内の検討事項を出さない
+        import re as _re
+        for sec in ('表現ルール適合', '置いた前提', '仕様 <small>'):
+            page = _re.sub(r'<section[^>]*>(?:(?!</section>).)*' + _re.escape(sec) + r'.*?</section>', '', page, flags=_re.S)
+    bad = [w for w in NG_WORDS + (NG_PUBLIC if public else []) if w in page]
+    if bad:
+        print('NG語を含むため書き出しません:', bad, file=sys.stderr); sys.exit(1)
     open(out, 'w', encoding='utf-8').write(page)
     print('wrote', out, round(len(page) / 1024), 'KB')
+
+
+NG_WORDS = ['りっちゃん', 'ボンボン', '元MC', '200万']          # 旧名義・過去の番組名など（どの版でも出さない）
+NG_PUBLIC = ['MCN', '社内メモ', '書面同意', 'マネージャー']       # 社外向けで出さない社内の検討事項
 
 
 TEMPLATE = r'''<title>ユニコ 15秒CM</title>
@@ -205,4 +221,4 @@ document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click'
 '''
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], '--public' in sys.argv[3:])

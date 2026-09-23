@@ -2,9 +2,9 @@
 """素材の再生成（公開リポジトリには肖像写真・ロゴ・フォントを置かないため、手元の原本から作り直す）
 
 入力（private/ に置く。private/ は .gitignore 済み）:
-  private/unico_photo.jpg   … 2ショット写真（Drive「ユニコ.JPG」, iPhone撮影 3434x2576）
-  private/logo.jpg          … ロゴ 目あり（Drive 01_ロゴ素材/目あり.jpg, 1280x1280）
-  private/logo_noeyes.jpg   … ロゴ 目なし（Drive 01_ロゴ素材/目なし.jpg）
+  private/unico_photo.jpg   … 2ショット写真（本人提供の原本）
+  private/logo.jpg          … ロゴ（目あり）
+  private/logo_noeyes.jpg   … ロゴ（目なし。現在の CM では使わない）
 出力（assets/ も .gitignore 済み）:
   assets/nakatsuka.png  assets/nakatsuka_solo.png  assets/ricchan.png  assets/logo.png  assets/logo_noeyes.png
 

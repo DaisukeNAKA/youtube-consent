@@ -1,0 +1,8 @@
+このフォルダのソースコード（*.js, *.mjs, *.py, *.sh, cm.html）は、リポジトリの LICENSE（MIT）に従います。
+
+ただし、次のものは MIT ライセンスの対象外です（All rights reserved。利用には権利者の許諾が必要です）。
+- コンビ名「ユニコ」、芸名、チャンネル名、ハンドル（@yy_unico）
+- ロゴ、写真などの肖像
+- CM の台詞・構成（scenes.js の COPY など）と、サウンドロゴ「ユ・ニ・コ」（E5–A5–G5）の旋律
+
+書体（Dela Gothic One、M PLUS Rounded 1c、Anton）は SIL Open Font License 1.1 で、このリポジトリには含めていません。

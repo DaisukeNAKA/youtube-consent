@@ -1,7 +1,28 @@
-# 肖像写真・ロゴ・フォント・書き出し動画は公開リポジトリに置かない（権利者に帰属）
+# 公開リポジトリのため、肖像・声・ロゴ・書体・書き出し物・企画データは置かない。
+# 場所単位で除外し、許可したものだけを残す（拡張子の書き漏れで素材が紛れ込まないように）。
 private/
-assets/*.png
-fonts/*.woff
+voice/
 out/
+assets/*
 !assets/layout.json
+!assets/.gitkeep
+fonts/*
+!fonts/.gitkeep
+storyboard*.json
+*.html
+!cm.html
+*.mp4
+*.mov
+*.wav
+*.m4a
+*.mp3
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.webp
+*.woff
+*.woff2
+*.ttf
+*.otf
 __pycache__/

@@ -29,8 +29,9 @@
   <label><input id="safe" type="checkbox"> UIセーフゾーン</label>
   <a id="fmt916" class="alt" href="?fmt=916">9:16</a>
   <a id="fmt169" class="alt" href="?fmt=169">16:9</a>
+  <a id="fmtsns" class="alt" href="?fmt=916&amp;variant=SNS">9:16 SNS版</a>
 </div>
-<audio id="aud" src="out/audio/mix.wav" preload="auto"></audio>
+<audio id="aud" preload="auto"></audio>
 <script src="engine.js"></script>
 <script src="scenes.js"></script>
 <script>
@@ -41,10 +42,12 @@
   let showSafe = false;
   const draw = (t) => { render(t); if (showSafe) safeOverlay(); };
   window.__ready = true;
-  window.__frame = (i) => { REC = []; render(i / FPS); window.__boxes = REC; REC = null; return canvas.toDataURL('image/png'); };
+  // 書き出し用: 1フレーム描画し、QA用の要素矩形（__boxes）と2人のステッカー間隔（__gap）を残す
+  window.__frame = (i) => { REC = []; newMasks(); render(i / FPS); window.__boxes = REC; window.__gap = stickerGap(); REC = null; MASKS = null; return canvas.toDataURL('image/png'); };
   window.__draw = (t) => { render(t); };
   if (exportMode) { draw(0); return; }
-  const aud = document.getElementById('aud'), seek = document.getElementById('seek'), tc = document.getElementById('tc'), btn = document.getElementById('play');
+  const aud = document.getElementById('aud'); aud.src = `out/audio/mix_${FMT}.wav`;
+  const seek = document.getElementById('seek'), tc = document.getElementById('tc'), btn = document.getElementById('play');
   let playing = false, t0 = 0, off = 0;
   const tick = () => {
     if (!playing) return;

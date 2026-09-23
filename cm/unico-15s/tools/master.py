@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""音声マスタリング: 目標 -14 LUFS（±0.5）/ トゥルーピーク -1.0 dBTP 以下 / 719,872 サンプル
-- 719,872 = AAC の 1024 サンプル×703 フレーム（=14.9973秒）。720,000 だと AAC の端数埋めで
-  コンテナ上の尺が 15.02 秒前後になり、YouTube スキップ不可（7〜15秒）の上限を超え得るため。
+"""音声マスタリング: 目標 -14 LUFS（±0.5）/ トゥルーピーク -1.0 dBTP 以下 / 718,848 サンプル
+- 718,848 = AAC の 1024 サンプル×702 フレーム（=14.976秒）。AAC エンコーダが先頭に 1024 サンプルの
+  プライミングを足すため、ストリーム上は 703 フレーム＝14.9973秒になり、コンテナでも音声トラックの
+  実尺（mdhd）でも 15.000 秒を超えない。15 秒枠の入稿で尺超過と判定されないようにするため。
   14.5 秒以降は無音なので実害はない。
 - 手順: 線形ゲインで -14 LUFS へ → ルックアヘッド・リミッター（4倍オーバーサンプリング相当の
   トゥルーピーク近似）→ 再測定し、必要なら1回だけ再調整。
-usage: python3 tools/master.py in.wav out.wav
+usage: python3 tools/master.py in.wav out.wav [--gain-from ref.wav.json]
 """
-import re, subprocess, sys
+import json, os, re, subprocess, sys
 import numpy as np, wave
 from scipy.signal import resample_poly
 import imageio_ffmpeg
 
 FF = imageio_ffmpeg.get_ffmpeg_exe()
-SR, NS = 48000, 719872
+SR, NS = 48000, 718848
 TARGET_I, CEIL_TP = -14.0, -1.2
 
 
@@ -60,19 +61,26 @@ def limit(x, ceil_db, look=0.0015, rel=0.06):
     return x * out
 
 
-def main(src, dst):
+def main(src, dst, fixed_gain_db=None):
     x = read(src)[:, :NS]
     if x.shape[1] < NS: x = np.pad(x, ((0, 0), (0, NS - x.shape[1])))
-    tmp = dst + '.tmp.wav'
-    for it in range(3):
-        write(tmp, x); I, TP = measure(tmp)
-        g = TARGET_I - I
-        if abs(g) < .25 and TP <= CEIL_TP + .05: break
-        x = limit(x * 10 ** (g / 20), CEIL_TP - .3)
+    tmp = dst + '.tmp.wav'; total = 0.0
+    if fixed_gain_db is not None:   # 効果音だけの版: 本編と同じゲインでそろえ、トゥルーピークだけ制限する
+        total = fixed_gain_db; x = limit(x * 10 ** (total / 20), CEIL_TP - .3)
+    else:
+        for it in range(3):
+            write(tmp, x); I, TP = measure(tmp)
+            g = TARGET_I - I
+            if abs(g) < .25 and TP <= CEIL_TP + .05: break
+            x = limit(x * 10 ** (g / 20), CEIL_TP - .3); total += g
     write(dst, x); I, TP = measure(dst)
-    import os; os.remove(tmp)
-    print(f'mastered: I={I} LUFS, TP={TP} dBTP, samples={x.shape[1]} ({x.shape[1] / SR:.4f}s)')
+    if os.path.exists(tmp): os.remove(tmp)
+    json.dump({'gain_db': round(total, 3), 'I': I, 'TP': TP, 'samples': x.shape[1]}, open(dst + '.json', 'w'))
+    print(f'mastered: I={I} LUFS, TP={TP} dBTP, gain={total:+.2f} dB, samples={x.shape[1]} ({x.shape[1] / SR:.4f}s)')
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    g = None
+    if len(sys.argv) > 4 and sys.argv[3] == '--gain-from':
+        g = json.load(open(sys.argv[4]))['gain_db']
+    main(sys.argv[1], sys.argv[2], g)

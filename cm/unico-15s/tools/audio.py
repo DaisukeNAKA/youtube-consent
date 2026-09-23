@@ -10,9 +10,12 @@
   声の帯域（1–4kHz）を空けたアレンジ。cues.json の voice に本人のWAVを置くと
   voice_windows の区間だけ音楽を約 -6dB（アタック50ms/リリース150ms）下げて自動ミックス
 
-出力: out/audio/music.wav, se.wav, mix_raw.wav（ラウドネス正規化は build.sh）
+usage: python3 tools/audio.py [--fmt 916|169] [--se-only]
+  cues.json の se のうち "fmt" を持つものは、その比率の書き出しにだけ入る（エンドカードBの出現が比率で違うため）
+  --se-only … BGMを抜いた効果音だけの版（Shortsの自動音源運用向け）
+出力: out/audio/mix_raw_<fmt>.wav（--se-only は mix_raw_<fmt>_se.wav）。ラウドネス調整は tools/master.py
 """
-import json, os, wave
+import argparse, json, os, wave
 import numpy as np
 from scipy.signal import butter, sosfilt
 
@@ -48,12 +51,13 @@ def adsr(n, a=.005, d=.1, s=.6, r=.08):
     return e
 
 
-def place(buf, sig, t0, gain=1.0, pan=0.0):
+def place(buf, sig, t0, gain=1.0, pan=0.0, pan_to=None):
     i0 = int(round(t0 * SR))
     if i0 >= buf.shape[1] or len(sig) == 0: return
     if i0 < 0: sig = sig[-i0:]; i0 = 0
     n = min(len(sig), buf.shape[1] - i0)
-    l, r = np.cos((pan + 1) * np.pi / 4), np.sin((pan + 1) * np.pi / 4)
+    p = np.full(n, pan) if pan_to is None else np.linspace(pan, pan_to, n)   # pan_to: 鳴っている間に定位を動かす（シュッ）
+    l, r = np.cos((p + 1) * np.pi / 4), np.sin((p + 1) * np.pi / 4)
     buf[0, i0:i0 + n] += sig[:n] * gain * l * 1.4142
     buf[1, i0:i0 + n] += sig[:n] * gain * r * 1.4142
 
@@ -183,8 +187,7 @@ HARM = [  # (開始秒, 長さ秒, 和音, ベース)
 HARM_OCHI = 10.0
 OCHI, BRK = 10.0, 9.5
 LOGO = [(0.0, 'E5', .25), (.25, 'A5', .25), (.5, 'G5', .5)]          # ユ・ニ・コ
-ANSWER = [(0.0, 'C6', .25), (.25, 'D6', .25), (.5, 'E6', .5)]        # 返しのフレーズ
-ARP = {  # マリンバの分散（声の帯域の上を動かす）
+ARP = {  # マリンバの分散（主に C5 以上。声の基音より上を動かす）
     0.0: ['C5', 'E5', 'G5', 'C6'], 4.0: ['A5', 'C6', 'E6', 'C6'], 5.0: ['F5', 'A5', 'C6', 'A5'],
     6.0: ['F5', 'A5', 'C6', 'A5'], 7.0: ['G5', 'B5', 'D6', 'B5'], 8.0: ['G5', 'B5', 'D6', 'F6'],
     11.0: ['C6', 'E6', 'G6', 'C7'],
@@ -195,7 +198,7 @@ def silent(t, cues):
     return any(a <= t < b for a, b in cues['music_breaks']) or t >= DUR - cues.get('tail_silence', .5)
 
 
-def build_music(cues):
+def build_music(cues, voice=False):
     global OCHI, BRK
     BRK, OCHI = cues['music_breaks'][0]      # 「間」の開始とオチ（全編成が戻る）の秒
     assert abs(OCHI - HARM_OCHI) < 1e-6, 'HARM のオチ位置と music_breaks が不一致'
@@ -232,12 +235,11 @@ def build_music(cues):
         for j in range(int(dur / .25)):
             t = t0 + j * .25
             if not silent(t, cues): place(mus, marimba(nm(notes[j % 4])), t, .7 if t0 == 0 else .5, .3)
-    for base in (2.0, 12.0):   # サウンドロゴ①② と返しのフレーズ
+    for base in (2.0, 12.0):   # サウンドロゴ①②（E5–A5–G5）
+        lg = .316 if (voice and base == 2.0) else 1.0   # 声あり版: 名乗りの声と重なる①はリードを −10dB（マリンバ主体）
         for dt, n_, ln in LOGO:
-            place(mus, lead(nm(n_), ln * .95, 1.3), base + dt, 1.35, 0)
+            place(mus, lead(nm(n_), ln * .95, 1.3), base + dt, 1.35 * lg, 0)
             place(mus, marimba(nm(n_) + 12, .8), base + dt, .6, 0)
-        for dt, n_, ln in ANSWER:
-            place(mus, lead(nm(n_), ln * .9), base + 1.0 + dt, .8, .1)
     duck = np.ones(N)
     for k in kicks:
         i = int(k * SR); n = min(int(.2 * SR), N - i)
@@ -267,29 +269,33 @@ def write_wav(path, st):
 
 
 def main():
+    ap = argparse.ArgumentParser(); ap.add_argument('--fmt', default='916', choices=['916', '169']); ap.add_argument('--se-only', action='store_true')
+    a = ap.parse_args()
     cues = json.load(open(os.path.join(ROOT, 'cues.json'), encoding='utf-8'))
     out = os.path.join(ROOT, 'out', 'audio'); os.makedirs(out, exist_ok=True)
-    music = build_music(cues) * cues.get('music_gain', .55)
-    se = np.zeros((2, N))
-    for c in cues['se']:
-        place(se, make_se(c), c['t'], c.get('gain', 1.0), c.get('pan', 0.0))
-    se *= cues.get('se_gain', .8)
     voice = np.zeros((2, N)); has = False
     for v in cues.get('voice', []):
         p = os.path.join(ROOT, v['file'])
         if os.path.exists(p): place(voice, load_wav(p), v['t'], v.get('gain', 1.0), v.get('pan', 0.0)); has = True
-    if has:  # 声枠で音楽を約-6dB（アタック50ms/リリース150ms）
+    music = build_music(cues, voice=has) * (0.0 if a.se_only else cues.get('music_gain', .55))
+    se = np.zeros((2, N))
+    for c in cues['se']:
+        if c.get('fmt', a.fmt) != a.fmt: continue
+        place(se, make_se(c), c['t'], c.get('gain', 1.0), c.get('pan', 0.0), c.get('pan_to'))
+    se *= cues.get('se_gain', .8)
+    if has:  # 声枠で音楽と効果音を約 -6dB（アタック50ms/リリース150ms）。打撃音が語頭を消さないように
         env = np.zeros(N)
-        for a, b in cues.get('voice_windows', []): env[int(a * SR):int(b * SR)] = 1
+        for w0, w1 in cues.get('voice_windows', []): env[int(w0 * SR):int(w1 * SR)] = 1
         sm = np.zeros(N); cur = 0.0
         for i in range(0, N, 240):
             k = 240 / ((.05 if env[i] > cur else .15) * SR); cur += (env[i] - cur) * min(1, k); sm[i:i + 240] = cur
-        music *= 1 - .5 * sm
+        music *= 1 - .5 * sm; se *= 1 - .5 * sm
     mix = music + se + voice
     mix[:, N - int(cues.get('tail_silence', .5) * SR):] = 0
     mix = np.tanh(mix * 1.05) / 1.05
-    write_wav(os.path.join(out, 'music.wav'), music); write_wav(os.path.join(out, 'se.wav'), se); write_wav(os.path.join(out, 'mix_raw.wav'), mix)
-    print('audio written', out, 'voice' if has else 'no-voice')
+    name = f"mix_raw_{a.fmt}{'_se' if a.se_only else ''}.wav"
+    write_wav(os.path.join(out, name), mix)
+    print('audio written', os.path.join(out, name), 'voice' if has else 'no-voice', 'SE only' if a.se_only else '')
 
 
 if __name__ == '__main__':
