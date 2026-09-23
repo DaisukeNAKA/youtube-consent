@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ユニコ 15秒CM</title>
+<style>
+  :root { --bg:#14101f; --fg:#f4f0ff; --muted:#a79fc4; --pink:#FF4FA3; --purple:#7C4DFF; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 system-ui,sans-serif; }
+  body.export { background:#000; }
+  body.export #ui { display:none; }
+  #stage { display:flex; justify-content:center; align-items:center; padding:16px; }
+  canvas { max-width:100%; max-height:calc(100vh - 140px); height:auto; box-shadow:0 10px 40px rgba(0,0,0,.5); background:#000; }
+  body.export canvas { max-width:none; max-height:none; box-shadow:none; }
+  #ui { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; padding:8px 16px 16px; }
+  #ui button, #ui a { background:var(--purple); color:#fff; border:0; border-radius:999px; padding:8px 16px; font-weight:700; cursor:pointer; text-decoration:none; }
+  #ui a.alt { background:transparent; border:1px solid var(--muted); color:var(--fg); }
+  #seek { width:min(560px, 90vw); accent-color:var(--pink); }
+  #tc { font-variant-numeric:tabular-nums; min-width:9ch; color:var(--muted); }
+  label { color:var(--muted); }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+<div id="ui">
+  <button id="play">▶ 再生</button>
+  <input id="seek" type="range" min="0" max="449" value="0">
+  <span id="tc">0.00s</span>
+  <label><input id="safe" type="checkbox"> UIセーフゾーン</label>
+  <a id="fmt916" class="alt" href="?fmt=916">9:16</a>
+  <a id="fmt169" class="alt" href="?fmt=169">16:9</a>
+</div>
+<audio id="aud" src="out/audio/mix.wav" preload="auto"></audio>
+<script src="engine.js"></script>
+<script src="scenes.js"></script>
+<script>
+(async () => {
+  const exportMode = Q.get('export') === '1';
+  if (exportMode) document.body.classList.add('export');
+  await loadAll();
+  let showSafe = false;
+  const draw = (t) => { render(t); if (showSafe) safeOverlay(); };
+  window.__ready = true;
+  window.__frame = (i) => { REC = []; render(i / FPS); window.__boxes = REC; REC = null; return canvas.toDataURL('image/png'); };
+  window.__draw = (t) => { render(t); };
+  if (exportMode) { draw(0); return; }
+  const aud = document.getElementById('aud'), seek = document.getElementById('seek'), tc = document.getElementById('tc'), btn = document.getElementById('play');
+  let playing = false, t0 = 0, off = 0;
+  const tick = () => {
+    if (!playing) return;
+    let t = aud.readyState >= 2 && !aud.paused ? aud.currentTime : off + (performance.now() - t0) / 1000;
+    if (t >= DUR) { playing = false; btn.textContent = '▶ 再生'; t = DUR - 1 / FPS; }
+    draw(t); seek.value = Math.floor(t * FPS); tc.textContent = t.toFixed(2) + 's';
+    requestAnimationFrame(tick);
+  };
+  btn.onclick = () => {
+    playing = !playing; btn.textContent = playing ? '❚❚ 停止' : '▶ 再生';
+    if (playing) { off = +seek.value / FPS; if (off >= DUR - .05) off = 0; t0 = performance.now(); aud.currentTime = off; aud.play().catch(() => {}); tick(); }
+    else aud.pause();
+  };
+  seek.oninput = () => { const t = +seek.value / FPS; draw(t); tc.textContent = t.toFixed(2) + 's'; if (playing) { aud.currentTime = t; off = t; t0 = performance.now(); } };
+  document.getElementById('safe').onchange = (e) => { showSafe = e.target.checked; draw(+seek.value / FPS); };
+  draw(0);
+})();
+</script>
+</body>
+</html>
