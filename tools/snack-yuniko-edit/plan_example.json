@@ -1,0 +1,20 @@
+{
+  "source": "synth_120s.mp4",
+  "se_dir": "./se",
+  "trim_start": 2.0,
+  "trim_end": 100.0,
+  "tail_seconds": 10.0,
+  "cuts": [[40.0, 55.0]],
+  "label": "スナックゆに子 #29",
+  "themes": [
+    {"source_start": 2.0, "title": "オープニング"},
+    {"source_start": 20.0, "title": "誕生日はLINEしろよ、って話をする回"},
+    {"source_start": 60.0, "title": "ライブ出演情報"}
+  ],
+  "se": [{"file": "doorbell.wav", "source_time": 2.0, "gain_db": -6},
+         {"file": "housouchaimu.wav", "source_time": 60.0, "gain_db": -8}],
+  "ed": {"music": "housouchaimu.wav", "music_start_source": 96.0, "music_gain_db": -8,
+         "fade_audio_seconds": 4, "fade_video_seconds": 3, "fade_in_seconds": 0.3},
+  "dialogue": {"target_lufs": -12.0, "true_peak": -1.0, "lra": 9, "denoise": {"nr": 12, "nf": -40}},
+  "video": {"crf": 20, "preset": "veryfast"}
+}

@@ -1,0 +1,238 @@
+{
+  "file": "/tmp/claude-0/-home-user-youtube-consent/75fb4748-18f5-575e-b185-0e9bb1183b06/scratchpad/out/snack_yuniko_29.mp4",
+  "duration": 2268.2,
+  "video": {
+    "codec": "h264",
+    "width": 1920,
+    "height": 1080,
+    "r_frame_rate": "30/1",
+    "pix_fmt": "yuv420p",
+    "color_primaries": "bt709"
+  },
+  "audio": {
+    "codec": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "bit_rate": "243240"
+  },
+  "loudness": {
+    "integrated_lufs": -13.0,
+    "lra": 5.0,
+    "true_peak_dbtp": -1.1
+  },
+  "black_frames": [
+    "[blackdetect @ 0x7f5b2c002240] black_start:2262.966667 black_end:2268.166667 black_duration:5.2"
+  ],
+  "silences": [],
+  "contact_sheet": "wk29/qa_contact_sheet.jpg",
+  "meta": {
+    "keep_segments": [
+      [
+        115.5,
+        2128.06
+      ],
+      [
+        2137.36,
+        2388.0
+      ]
+    ],
+    "out_duration": 2263.2,
+    "total_out": 2268.2,
+    "themes_out": [
+      {
+        "title": "ファン歴3620日目のオープニング",
+        "start": 0.0,
+        "end": 27.5,
+        "source_start": 115.5
+      },
+      {
+        "title": "20分喋って撮れてなかったテイク2",
+        "start": 27.5,
+        "end": 70.0,
+        "source_start": 143.0
+      },
+      {
+        "title": "りっちゃんは三日坊主の積み重ね",
+        "start": 70.0,
+        "end": 113.9,
+        "source_start": 185.5
+      },
+      {
+        "title": "髪型で「結婚を諦めた」と思われた話",
+        "start": 113.9,
+        "end": 191.0,
+        "source_start": 229.4
+      },
+      {
+        "title": "憧れの髪型は坊主とアフロ",
+        "start": 191.0,
+        "end": 312.2,
+        "source_start": 306.5
+      },
+      {
+        "title": "シャワーが苦手、でも無臭",
+        "start": 312.2,
+        "end": 432.9,
+        "source_start": 427.7
+      },
+      {
+        "title": "坊主なら乾かさなくていい",
+        "start": 432.9,
+        "end": 490.9,
+        "source_start": 548.4
+      },
+      {
+        "title": "彼氏の答え：坊主OK、アフロNG",
+        "start": 490.9,
+        "end": 619.7,
+        "source_start": 606.4
+      },
+      {
+        "title": "坊主にするのは結婚したとき",
+        "start": 619.7,
+        "end": 683.5,
+        "source_start": 735.2
+      },
+      {
+        "title": "お母さんに褒められる頭の形",
+        "start": 683.5,
+        "end": 751.1,
+        "source_start": 799.0
+      },
+      {
+        "title": "本編：誕生日会に相方だけ呼ばれない",
+        "start": 751.1,
+        "end": 932.8,
+        "source_start": 866.6
+      },
+      {
+        "title": "ひっそり心を痛めていた中塚",
+        "start": 932.8,
+        "end": 983.4,
+        "source_start": 1048.3
+      },
+      {
+        "title": "バイト先に顔を出すのは普通？",
+        "start": 983.4,
+        "end": 1033.7,
+        "source_start": 1098.9
+      },
+      {
+        "title": "お笑いとプライベートは切り分け",
+        "start": 1033.7,
+        "end": 1113.1,
+        "source_start": 1149.2
+      },
+      {
+        "title": "中塚さんが来ると注目を持っていかれる",
+        "start": 1113.1,
+        "end": 1189.2,
+        "source_start": 1228.6
+      },
+      {
+        "title": "聞いてくれたら嘘はつかない",
+        "start": 1189.2,
+        "end": 1237.0,
+        "source_start": 1304.7
+      },
+      {
+        "title": "外したのは中塚さんの負担を減らすため",
+        "start": 1237.0,
+        "end": 1386.8,
+        "source_start": 1352.5
+      },
+      {
+        "title": "中塚の「親しい友達」は兄とりっちゃん",
+        "start": 1386.8,
+        "end": 1456.2,
+        "source_start": 1502.3
+      },
+      {
+        "title": "撮影協力：招き猫さん（普通に払ってます）",
+        "start": 1456.2,
+        "end": 1519.3,
+        "source_start": 1571.7
+      },
+      {
+        "title": "日エロ：ちょいエロギャグ",
+        "start": 1519.3,
+        "end": 1608.2,
+        "source_start": 1634.8
+      },
+      {
+        "title": "エレベーターの落書きとオレンドスラッシュ",
+        "start": 1608.2,
+        "end": 1760.3,
+        "source_start": 1723.7
+      },
+      {
+        "title": "半年前の下ネタ、聞いてられない",
+        "start": 1760.3,
+        "end": 1842.5,
+        "source_start": 1875.8
+      },
+      {
+        "title": "深夜に切り抜きを作る38歳の気づき",
+        "start": 1842.5,
+        "end": 1905.4,
+        "source_start": 1958.0
+      },
+      {
+        "title": "日エロ、廃盤のお知らせ",
+        "start": 1905.4,
+        "end": 1995.2,
+        "source_start": 2020.9
+      },
+      {
+        "title": "エロで戦わない中塚さん",
+        "start": 1995.2,
+        "end": 2024.9,
+        "source_start": 2110.7
+      },
+      {
+        "title": "水回りの掃除と新しい洗濯機",
+        "start": 2024.9,
+        "end": 2086.6,
+        "source_start": 2149.7
+      },
+      {
+        "title": "今日は短め、この後ネタ合わせ",
+        "start": 2086.6,
+        "end": 2104.6,
+        "source_start": 2211.4
+      },
+      {
+        "title": "ライブ出演情報",
+        "start": 2104.6,
+        "end": 2244.4,
+        "source_start": 2229.4
+      },
+      {
+        "title": "エンディング",
+        "start": 2244.4,
+        "end": 2263.2,
+        "source_start": 2369.2
+      }
+    ],
+    "se": [
+      {
+        "file": "doorbell.wav",
+        "out_time": 755.35,
+        "gain_db": -4.0
+      },
+      {
+        "file": "porunohabu-chao-gao-yin-zhi_QjjZBon.wav",
+        "out_time": 1519.35,
+        "gain_db": -5.0
+      }
+    ],
+    "ed": {
+      "music": "ricchan_ekubo.wav",
+      "out_start": 2250.97,
+      "gain_db": -1.5,
+      "fade_audio_seconds": 4.5,
+      "music_len": 17.23
+    },
+    "talk_end_out": 2249.9
+  }
+}

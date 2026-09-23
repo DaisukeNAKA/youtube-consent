@@ -1,0 +1,232 @@
+{
+ "source": "./raw/DJI_20260915135827_0021_D.MP4",
+ "se_dir": "./se",
+ "trim_start": 115.5,
+ "trim_end": 2374.7,
+ "tail_seconds": 13.3,
+ "cuts": [
+  [
+   2128.06,
+   2137.36
+  ]
+ ],
+ "label": "スナックゆに子 #29",
+ "themes": [
+  {
+   "source_start": 115.5,
+   "title": "ファン歴3620日目のオープニング"
+  },
+  {
+   "source_start": 143.0,
+   "title": "20分喋って撮れてなかったテイク2"
+  },
+  {
+   "source_start": 185.5,
+   "title": "りっちゃんは三日坊主の積み重ね"
+  },
+  {
+   "source_start": 229.4,
+   "title": "髪型で「結婚を諦めた」と思われた話"
+  },
+  {
+   "source_start": 306.5,
+   "title": "憧れの髪型は坊主とアフロ"
+  },
+  {
+   "source_start": 427.7,
+   "title": "シャワーが苦手、でも無臭"
+  },
+  {
+   "source_start": 548.4,
+   "title": "坊主なら乾かさなくていい"
+  },
+  {
+   "source_start": 606.4,
+   "title": "彼氏の答え：坊主OK、アフロNG"
+  },
+  {
+   "source_start": 735.2,
+   "title": "坊主にするのは結婚したとき"
+  },
+  {
+   "source_start": 799.0,
+   "title": "お母さんに褒められる頭の形"
+  },
+  {
+   "source_start": 866.6,
+   "title": "本編：誕生日会に相方だけ呼ばれない"
+  },
+  {
+   "source_start": 1048.3,
+   "title": "ひっそり心を痛めていた中塚"
+  },
+  {
+   "source_start": 1098.9,
+   "title": "バイト先に顔を出すのは普通？"
+  },
+  {
+   "source_start": 1149.2,
+   "title": "お笑いとプライベートは切り分け"
+  },
+  {
+   "source_start": 1228.6,
+   "title": "中塚さんが来ると注目を持っていかれる"
+  },
+  {
+   "source_start": 1304.7,
+   "title": "聞いてくれたら嘘はつかない"
+  },
+  {
+   "source_start": 1352.5,
+   "title": "外したのは中塚さんの負担を減らすため"
+  },
+  {
+   "source_start": 1502.3,
+   "title": "中塚の「親しい友達」は兄とりっちゃん"
+  },
+  {
+   "source_start": 1571.7,
+   "title": "撮影協力：招き猫さん（普通に払ってます）"
+  },
+  {
+   "source_start": 1634.8,
+   "title": "日エロ：ちょいエロギャグ"
+  },
+  {
+   "source_start": 1723.7,
+   "title": "エレベーターの落書きとオレンドスラッシュ"
+  },
+  {
+   "source_start": 1875.8,
+   "title": "半年前の下ネタ、聞いてられない"
+  },
+  {
+   "source_start": 1958.0,
+   "title": "深夜に切り抜きを作る38歳の気づき"
+  },
+  {
+   "source_start": 2020.9,
+   "title": "日エロ、廃盤のお知らせ"
+  },
+  {
+   "source_start": 2110.7,
+   "title": "エロで戦わない中塚さん"
+  },
+  {
+   "source_start": 2149.7,
+   "title": "水回りの掃除と新しい洗濯機"
+  },
+  {
+   "source_start": 2211.4,
+   "title": "今日は短め、この後ネタ合わせ"
+  },
+  {
+   "source_start": 2229.4,
+   "title": "ライブ出演情報"
+  },
+  {
+   "source_start": 2369.2,
+   "title": "エンディング"
+  }
+ ],
+ "se": [
+  {
+   "file": "doorbell.wav",
+   "source_time": 870.85,
+   "gain_db": -4
+  },
+  {
+   "file": "porunohabu-chao-gao-yin-zhi_QjjZBon.wav",
+   "source_time": 1634.85,
+   "gain_db": -5
+  }
+ ],
+ "ed": {
+  "music": "ricchan_ekubo.wav",
+  "music_start_source": 2375.77,
+  "music_gain_db": -1.5,
+  "fade_in_seconds": 0.05,
+  "fade_audio_seconds": 4.5,
+  "fade_video_seconds": 2.0,
+  "black_tail_seconds": 5.0
+ },
+ "dialogue": {
+  "target_lufs": -13.0,
+  "true_peak": -1.0,
+  "lra": 9,
+  "highpass_hz": 75,
+  "notch_hz": [
+   100
+  ],
+  "denoise": {
+   "nr": 16,
+   "nf": -50
+  },
+  "_comment_denoise": "afftdn に tn/tr は付けない。tn=1 を付けると nr が無視されることを実測で確認した",
+  "eq_bands": [
+   {
+    "type": "lowshelf",
+    "f": 274.8,
+    "Q": 1.1,
+    "gain_db": 10.73
+   },
+   {
+    "type": "peak",
+    "f": 400.0,
+    "Q": 2.5,
+    "gain_db": 3.24
+   },
+   {
+    "type": "peak",
+    "f": 1100.5,
+    "Q": 2.05,
+    "gain_db": 2.02
+   },
+   {
+    "type": "peak",
+    "f": 2339.5,
+    "Q": 1.32,
+    "gain_db": 10.17
+   },
+   {
+    "type": "highshelf",
+    "f": 3205.1,
+    "Q": 2.5,
+    "gain_db": 2.84
+   },
+   {
+    "type": "peak",
+    "f": 13922.1,
+    "Q": 0.6,
+    "gain_db": 11.08
+   }
+  ],
+  "_comment_eq": "#18（2026-06-16、e935 → P4next の SD 録音 48kHz/24bit）の1/3オクターブ実測が目標。全編に散らした10区間×30秒（計300秒）で #18 と #29 を測り、差を重ならない6バンドに最小二乗で当てはめ、実際に掛けた結果の残差で1回詰めた。LTASS（Byrne 1994）は #18 より 1〜4 kHz で 6〜10 dB 暗く、この番組の目標にはならないことが実測で分かったため使っていない。結果: #18 からの乖離 RMS 2.40 dB（最大 6.7 dB）。初版は 8.87 dB、無処理は 6.78 dB。",
+  "deesser": {
+   "crossover_hz": 5200,
+   "ratio_thresh_db": -8.0,
+   "ratio": 5.0,
+   "max_gr_db": 10.0,
+   "attack_s": 0.0015,
+   "release_s": 0.012
+  },
+  "compressor": "acompressor=threshold=-20dB:ratio=2.2:attack=10:release=150:makeup=1:knee=6",
+  "downmix_mono": true,
+  "eq_before_nr": true,
+  "_comment_order": "EQ を afftdn より前に置く。実測で音声の高域が 1.1 dB 多く残り、無音部の高域ノイズが 4 dB 少なく、ミュージカルノイズも小さくなった",
+  "_comment_deesser": "#18 の歯擦音 p99.9 = -18.8 dBFS に合わせて決めた（結果 -18.3 dBFS、作動率 4.4%）"
+ },
+ "video": {
+  "crf": 19,
+  "preset": "medium",
+  "fps": 30
+ },
+ "style": {
+  "theme_size": 54,
+  "label_size": 32,
+  "x": 48,
+  "y": 40,
+  "pad": 14,
+  "bar_w": 12
+ }
+}
