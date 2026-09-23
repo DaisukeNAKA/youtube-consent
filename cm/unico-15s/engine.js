@@ -457,10 +457,10 @@ function cam(anchor, z, fn, dx = 0, dy = 0) {
 }
 
 // 小さなピル（チップ・ミニチップ）。tri: 下向き三角で指す
-function pill(label, x, y, size, { bg = C.white, edge = C.pink, fg = C.ink, font = F.round, weight = '900 ', tri = false, r = null, qa = 'label', k = 1, rot = 0, padX = 34, spk = null } = {}) {
+function pill(label, x, y, size, { bg = C.white, edge = C.pink, fg = C.ink, font = F.round, weight = '900 ', tri = false, r = null, qa = 'label', k = 1, rot = 0, padX = 34, spk = null, hMul = 1.5 } = {}) {
   if (k <= 0) return;
   withT(() => {
-    ctx.font = `${weight}${size * U}px ${font}`; const w = ctx.measureText(label).width + padX * U, h = size * 1.5 * U, rr = r == null ? h / 2 : r;
+    ctx.font = `${weight}${size * U}px ${font}`; const w = ctx.measureText(label).width + padX * U, h = size * hMul * U, rr = r == null ? h / 2 : r;
     ctx.fillStyle = 'rgba(27,16,51,.3)'; rrect(-w / 2 + 5 * U, -h / 2 + 7 * U, w, h, rr); ctx.fill();
     ctx.beginPath(); rrect(-w / 2, -h / 2, w, h, rr);
     if (tri) { ctx.moveTo(-14 * U, h / 2); ctx.lineTo(0, h / 2 + 18 * U); ctx.lineTo(14 * U, h / 2); }

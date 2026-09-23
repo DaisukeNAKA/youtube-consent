@@ -189,10 +189,10 @@ function sceneBoke(t) {
   else if (t < T.morphEnd) {   // f225–237: 40pxのミニチップへ縮めながら上へ（最後の天丼の前振り）
     const e = E.inOutCubic(prog(t, T.morph, T.morphEnd)), sz = lerp(L.tsz, LAY.miniSz, e);
     // 16:9 は上へふくらむ2次ベジェ（リッチャン☆の顔とハンドルの間を通る）
-    const c1 = V ? [(L.tel2[0] + L.mini[0]) / 2, (L.tel2[1] + L.mini[1]) / 2] : [900, 180];
+    const c1 = V ? [(L.tel2[0] + L.mini[0]) / 2, (L.tel2[1] + L.mini[1]) / 2] : [820, 120];
     const px = (1 - e) ** 2 * L.tel2[0] + 2 * e * (1 - e) * c1[0] + e * e * L.mini[0], py = (1 - e) ** 2 * L.tel2[1] + 2 * e * (1 - e) * c1[1] + e * e * L.mini[1];
     pill(COPY.boke2, px, py, sz, {
-      bg: mixHex(C.pink, C.white, e), edge: mixHex(C.white, C.pink, e), padX: lerp(L.tsz * .6, 34, e), r: lerp(34 * U, sz * .75 * U, e), ...(sz >= 56 ? { qa: 'telop', spk: 'ricchan' } : {}) });   // 縮んだ後はラベル扱い
+      bg: mixHex(C.pink, C.white, e), edge: mixHex(C.white, C.pink, e), padX: lerp(L.tsz * .6, 34, e), hMul: lerp(1.3, 1.5, e), r: lerp(34 * U, sz * .75 * U, e), ...(sz >= 56 ? { qa: 'telop', spk: 'ricchan' } : {}) });   // 縮んだ後はラベル扱い
   }
   nameTag(COPY.tagR[0], COPY.tagR[1], L.tag[0], L.tag[1], t, T.tagR, C.pink, L.tagSz);
 }
