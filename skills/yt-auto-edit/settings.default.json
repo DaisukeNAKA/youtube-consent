@@ -1,5 +1,5 @@
 {
-  "version": "v3",
+  "version": "v3.1",
   "resolution": "1080p",
   "fps": 30,
   "caption": {
@@ -121,7 +121,7 @@
     "lufs": -14,
     "tp": -1.0,
     "lra": 11,
-    "tp_headroom": 0.0
+    "tp_headroom": 0.5
   },
   "qc": {
     "lufs_tolerance": 1.0,

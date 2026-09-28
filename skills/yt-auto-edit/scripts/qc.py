@@ -172,7 +172,7 @@ def main():
     short = [c for c in cues if c["end"] - c["start"] < min_dur - 1e-3 and not (tl_dur and c["end"] >= tl_dur - 0.05)]  # 尺の末尾で切れたキューは除外
     longc = [c for c in cues if c["end"] - c["start"] > max_dur + 1e-3]
     overlap = [(p, n) for p, n in zip(cues, cues[1:]) if n["start"] < p["end"] - 1e-3]
-    badhead = [c for c in cues if c["text"] and c["text"][0] in "ーんっッ々ぁぃぅぇぉゃゅょァィゥェォャュョ、。」）)"]
+    badhead = [c for c in cues if c["text"] and c["text"][0] in "ーんっッ々ぁぃぅぇぉゃゅょァィゥェォャュョ、。」）)" and not c["text"].startswith("って")]  # 引用の「って」は許容
     punct = [c for c in cues if re.search(r"[、。！？]", c["text"])]
     fullwidth = [c for c in cues if re.search(r"[Ａ-Ｚａ-ｚ０-９]", c["text"])]
     covered = sum(min(c["end"], tl_dur) - c["start"] for c in cues if c["start"] < tl_dur)
@@ -180,7 +180,9 @@ def main():
     for c in over:
         issues.append(f"字数超過 {len(c['text'])}>{max_chars}: {fmt_time(c['start'])} 「{c['text']}」")
     for c in short:
-        issues.append(f"表示時間不足 {c['end']-c['start']:.2f}s<{min_dur}: {fmt_time(c['start'])} 「{c['text']}」")
+        d = c['end'] - c['start']
+        # 直後に落とした語（相槌・フィラー）や次キューがあり伸ばせない短い字幕は「確認推奨」、0.3s 未満だけ「要修正」
+        (issues if d < 0.3 else warns).append(f"表示時間不足 {d:.2f}s<{min_dur}: {fmt_time(c['start'])} 「{c['text']}」")
     for c in longc:
         warns.append(f"表示時間超過 {c['end']-c['start']:.2f}s>{max_dur}: {fmt_time(c['start'])} 「{c['text']}」")
     for p, n in overlap:

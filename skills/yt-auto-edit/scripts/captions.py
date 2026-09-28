@@ -145,7 +145,8 @@ def seg_break_ok(tok, nxt, min_gap):
         return True
     # トークンが1文字（「よ」「ね」等）でも、セグメント末尾の連結文字列が文末表現なら切る（例: ます|よ → 「ますよ」）
     tail = tok.get("seg_tail") or core
-    if tail and len(tail) >= 2 and ends_with_any(tail, SENT_END) and (tail[-1] in "よねかなわ" or ends_with_any(tail, ["です", "ます", "ました", "でした", "ません", "けど", "やん", "よね", "って"])):
+    m = ends_with_any(tail, SENT_END) if tail else None
+    if m and len(m) >= 2:
         return True
     return False
 
@@ -275,6 +276,26 @@ def build_cues(toks, mapper, st, dropped=None):
     return cues
 
 
+def merge_short_cues(cues, st):
+    """表示が min_dur 未満で短い（≤6字）キュー、または行頭NG文字・「って」で始まるキューを、
+    間が 0.4s 未満で字数上限に収まるなら前（優先）か後ろのキューへ併合する。src 時刻ベース（apply_timing 前）。"""
+    cap = st["caption"]
+    max_chars = int(cap.get("max_chars", 18)); min_dur = float(cap.get("min_dur", 0.6))
+    out = []
+    i = 0
+    while i < len(cues):
+        c = cues[i]
+        dur = c["src_end"] - c["src_start"]
+        needs = (dur < min_dur and len(c["text"]) <= 6) or (c["text"] and (c["text"][0] in LINE_HEAD_NG and not c["text"].startswith("って")))
+        if needs and out and (c["src_start"] - out[-1]["src_end"]) < 0.4 and len(out[-1]["text"]) + len(c["text"]) <= max_chars:
+            out[-1]["text"] = out[-1]["text"] + c["text"]; out[-1]["src_end"] = c["src_end"]; i += 1; continue
+        if needs and i + 1 < len(cues) and (cues[i + 1]["src_start"] - c["src_end"]) < 0.4 and len(c["text"]) + len(cues[i + 1]["text"]) <= max_chars \
+                and not (cues[i + 1]["text"] and cues[i + 1]["text"][0] in LINE_HEAD_NG):
+            cues[i + 1]["text"] = c["text"] + cues[i + 1]["text"]; cues[i + 1]["src_start"] = c["src_start"]; i += 1; continue
+        out.append(c); i += 1
+    return out
+
+
 def apply_timing(cues, mapper, st, total_out, dropped_out=None):
     """dropped_out: 出力時刻の [(start,end)]（落とした語の発話帯）。gap_fill はこの帯に重なる隙間を埋めない（B2）。"""
     cap = st["caption"]
@@ -384,6 +405,7 @@ def main():
     mute = mute_ranges(plan)
     toks = flat_tokens(tr, remove_fillers=bool(st["cuts"].get("remove_fillers", True)), mute=mute, dropped=dropped)
     cues = build_cues(toks, mapper, st, dropped=dropped)
+    cues = merge_short_cues(cues, st)
     dropped_out = dropped_spans_out(dropped, mapper)
     cues = apply_timing(cues, mapper, st, mapper.total, dropped_out=dropped_out)
     cues = apply_overrides(cues, plan.get("caption_overrides"))
