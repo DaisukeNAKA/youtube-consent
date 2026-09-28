@@ -1,0 +1,23 @@
+https://x.com/shupeiman/status/2104070038382879199
+Sun Sep 27 04:46:03 +0000 2026
+
+Claude CodeとCodexの使い分け、正解出ました
+
+・動画づくりはClaude Code（カット、字幕、写真の差し込み、サムネ、概要欄まで）
+・YouTubeへのアップはCodex
+・Claude Codeはブラウザでのファイルアップが苦手で、2.6GBの動画は通らない
+・Codexは画面ごと操作できるので、Macのファイル選択もそのままいける
+
+流れはこれだけ
+1. Claude CodeにYouTube動画を作ってもらう
+2. 最後に「Codex向けのプロンプトよろ」と頼む
+3. 出てきた指示文をCodexに貼る
+
+あとはCodexがChromeで
+・チャンネルを自分で確認
+・動画、サムネ、タイトル、概要欄、字幕ファイルをアップ
+・収益化も前回と同じ設定に合わせる
+・YouTubeは非公開、Spotifyは下書きで保存
+まで進めてくれる
+
+作るのはClaude Code、上げるのはCodex

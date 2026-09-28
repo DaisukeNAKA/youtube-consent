@@ -1,0 +1,33 @@
+{
+ "note": "反証レビュー用の独自計測(1080p px)。frames/ に切り出しフレーム、measure_out.json に生値、measure_review.py/timing.py が計測スクリプト。",
+ "caption": {
+  "shupeiman_1080p": {"glyph_h": [47,54], "bottom_margin": [69,77], "font_match": "Noto Sans CJK Black (font_compare.png)", "stroke": "黒縁取りなし。弱いドロップシャドウのみ(dark ring ratio≈0.5, すりガラス上≈0.03)"},
+  "shupeiman_4k": {"glyph_h": 96, "bottom_margin": 154, "x_range": [1321,2564], "ratio_vs_1080p": "≈2x"},
+  "x_article_frames(author 11min video)": {"glyph_h": 50, "bottom_margin": 75, "max_chars_seen": 18},
+  "takkatw": {"glyph_h": 52, "bottom_margin": 64},
+  "carley": {"glyph_h": [55,59], "bottom_margin": [78,80], "stroke": "黒縁取り≈4-5px + 影(dark ring ratio 1.0 for r=2..4)"},
+  "timing": {"min_cue_dur_s": {"shupeiman": 0.63, "takkatw": 0.67, "carley": 0.90}, "max_cue_dur_s": {"shupeiman": 4.10, "takkatw": 4.57}, "gaps": "基本0(次キュー開始まで持続)。shupeiman 6.11-6.77 は字幕なし(音声『というやつですね』は継続)、takkatw 6.2-10.4 は画面収録内ナレーションで字幕なし"}
+ },
+ "heading_band": {
+  "takkatw": {"x": 87, "y": 60, "h": 92, "skew_deg": 8.65, "text_h": 41, "pad_top": 27, "pad_bot": 23, "text_pad_left≈": 26, "text_pad_right≈": 36, "text_rgb": [23,32,39], "text_oblique": true, "in_anim": "左からスライド≈0.25s (tak_headin.png)", "shown_during_screen_inset": false},
+  "x_article_outer(author)": {"side": "top-right", "right_margin": 94, "y": 70, "h": 81, "skew_deg": [8.4,9.2], "text_h": 41, "pad_top": 18, "pad_bot": 20, "text_rgb": [25,31,41], "text_oblique": true, "shown_with_inset_and_wipe": true},
+  "x_article_inner(final.mp4, author)": {"side": "top-left", "h_native≈": 91, "skew_deg": 8.5},
+  "carley": {"x": 56, "y": 48, "w": 276, "h": 94, "skew_deg": 0, "shape": "角丸(半径≈20px)", "text_rgb": [2,2,5], "text_h": 40, "pad": {"top":29,"bot":24,"left":32,"right":30}, "in_anim": "なし(0フレームから静止)"}
+ },
+ "circle_wipe": {
+  "takkatw": {"side": "bottom-left", "diam": 220, "center": [158,753], "left_margin": 48, "bottom_margin": 216, "overlaps_inset_left_edge_px": 23},
+  "x_article_outer(author)": {"side": "bottom-left", "diam": 280, "center": [175,789], "left_margin": 35, "bottom_margin": 150, "center_x_equals_inset_left_edge": true, "border": "なし"},
+  "shupeiman_30s": "ワイプなし(Bロール区間のみ)",
+  "carley": "ワイプなし"
+ },
+ "screen_inset": {
+  "takkatw": {"x": [243,1669], "y": [40,927], "w": 1427, "w_ratio": 0.743, "centered": true, "corner_radius": "≈0(角丸なし)", "bg": "#101627"},
+  "x_article_outer(author)": {"x": [176,1855], "y": [30,895], "w": 1680, "w_ratio": 0.875, "left_margin": 176, "right_margin": 65, "corner_radius": "≈10-12px", "bg": "#101628"}
+ },
+ "vertical_source": {"takkatw": {"w": 608, "centered": true, "bg": "navy #101627"}, "carley": {"w": 609, "bg": "素材ぼかし+減光(中央輝度140 vs 左107/右81)"}},
+ "broll_shupeiman": {"speaker_region_w": 770, "speaker_ratio": 0.40, "card_bbox": [1070,216,548,668], "card_center": [1344,550], "card_radius≈": 30, "shadow": "下側に≈30px", "zoom": "なし(13s/18s/20s/26s/30s で bbox 同一)", "transition": "全画面ディゾルブ 10フレーム≈0.33s (11.9s+ luma 85→235)", "glass_rgb_samples": [[239,218,203],[221,212,204]]},
+ "cuts": {"takkatw_scene_cuts_s": [3.50,33.70], "shupeiman_scene_cuts": "なし(閾値0.25)", "type": "ハードカット"},
+ "loudness_measured": {"takkatw": {"I": -14.30, "TP": -1.63, "LRA": 6.1}, "shupeiman": {"I": -14.10, "TP": -1.98, "LRA": 1.8}, "carley": {"I": -15.49, "TP": -2.55, "LRA": 3.9}},
+ "fps": {"takkatw": 30.0, "shupeiman": 29.97, "carley": 29.97},
+ "srt_evidence": "img_HTModD_aMAA44i4.jpg: YouTube Studio 字幕『もう、めちゃくちゃ大後悔です』『早く買っておけばよかったというやつですね』『丸2日、ぼく画面常時オン…』= 読点あり・焼き込み字幕と本文/区切り/時刻が異なる"
+}

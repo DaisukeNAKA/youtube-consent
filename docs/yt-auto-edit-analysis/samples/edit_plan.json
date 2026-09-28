@@ -1,0 +1,73 @@
+{
+ "plan": "B",
+ "keep": [
+  {
+   "src_start": 2.8,
+   "src_end": 37.5
+  },
+  {
+   "src_start": 47.9,
+   "src_end": 65.15
+  },
+  {
+   "src_start": 66.0,
+   "src_end": 130.9
+  },
+  {
+   "src_start": 132.3,
+   "src_end": 210.5
+  },
+  {
+   "src_start": 211.6,
+   "src_end": 299.9
+  }
+ ],
+ "headings": [
+  {
+   "text": "NSC東京31期のユニコ",
+   "src_start": 9.4,
+   "src_end": 37.5
+  },
+  {
+   "text": "メルカリのヘビーユーザー",
+   "src_start": 48.2,
+   "src_end": 87.4
+  },
+  {
+   "text": "妻のアカウントで出品したら",
+   "src_start": 87.4,
+   "src_end": 128.7
+  },
+  {
+   "text": "プロフの差で売れ行き激変",
+   "src_start": 132.3,
+   "src_end": 180.4
+  },
+  {
+   "text": "出品者の態度が全然違う",
+   "src_start": 180.4,
+   "src_end": 250.9
+  },
+  {
+   "text": "コンビニでアイスもダメ?",
+   "src_start": 250.9,
+   "src_end": 268.7
+  },
+  {
+   "text": "2つ目 iPhoneを中古で購入",
+   "src_start": 269.1,
+   "src_end": 299.9
+  }
+ ],
+ "screen": [],
+ "broll": [
+  {
+   "file": "broll_unico_photo.jpg",
+   "src_start": 3.4,
+   "src_end": 9.2,
+   "kind": "photo"
+  }
+ ],
+ "caption_overrides": [],
+ "notes": "0-2.8s 開始前の無音をカット。37.5-47.9s は『そういう話いらないんじゃない?』のメタ雑談で本題外のためカット。130.9-132.3s と 210.5-211.6s は同じ言葉の繰り返し(言い直し)で後半を落とした。素材は300sで途中終了のため 299.9s で終える。B-roll は自己紹介中にユニコ2人の写真(Live Photo静止画)を1枚。 v2: 65.2-66.0s の重複した「すごい!」は言い直し扱いで前を落とした。"
+}
