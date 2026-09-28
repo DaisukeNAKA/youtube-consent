@@ -1,0 +1,150 @@
+{
+  "version": "v3.1",
+  "resolution": "1080p",
+  "fps": 30,
+  "caption": {
+    "font": "Noto Sans JP",
+    "weight": 900,
+    "size_ratio": 0.048,
+    "bottom_ratio": 0.069,
+    "color": "#FFFFFF",
+    "style": "shadow",
+    "shadow": true,
+    "shadow_offset_px": 2,
+    "shadow_blur_px": 5,
+    "shadow_alpha": 0.5,
+    "stroke_color": "#000000",
+    "stroke_ratio": 0.004,
+    "max_chars": 18,
+    "min_dur": 0.6,
+    "max_dur": 4.0,
+    "gap_fill": 0.6,
+    "no_fill_over_dropped": true,
+    "punctuation": false,
+    "segment_break_gap": 0.15,
+    "drop_backchannel": true
+  },
+  "heading": {
+    "position": "top-left",
+    "shape": "skew",
+    "skew_deg": -8.5,
+    "band_color": "#FFFFFF",
+    "text_color": "#182028",
+    "size_ratio": 0.041,
+    "band_height_ratio": 0.083,
+    "margin_x_ratio": 0.045,
+    "margin_y_ratio": 0.055,
+    "pad_x_px": 32,
+    "pad_y_px": 20,
+    "pad_x_ratio": 0.019,
+    "pad_y_ratio": 0.02,
+    "anim": "slide",
+    "anim_in": 0.25,
+    "anim_out": 0.0,
+    "show_during_screen": true,
+    "rounded_radius_px": 20,
+    "rounded_text_color": "#000000",
+    "rounded_anim": "none"
+  },
+  "wipe": {
+    "position": "bottom-left",
+    "size": "standard",
+    "diameter_ratio": 0.22,
+    "small_ratio": 0.16,
+    "center_x_ratio": 0.085,
+    "center_y_ratio": 0.72,
+    "fade": 0.2,
+    "margin_ratio": 0.04,
+    "border": false,
+    "focus": {
+      "x": 0.5,
+      "y": 0.35
+    }
+  },
+  "screen": {
+    "layout": "inset",
+    "bg": "#101627",
+    "preset": "author",
+    "presets": {
+      "author": {
+        "width_ratio": 0.875,
+        "top_ratio": 0.028,
+        "left_ratio": 0.092,
+        "align": "left",
+        "radius_px": 12,
+        "bg": "#101627",
+        "max_bottom_ratio": 0.83
+      },
+      "takkatw": {
+        "width_ratio": 0.743,
+        "top_px": 40,
+        "top_ratio": 0.037,
+        "align": "center",
+        "centered": true,
+        "radius_px": 0,
+        "bg": "#101627"
+      }
+    },
+    "max_bottom_ratio": 0.83
+  },
+  "vertical_source": {
+    "background": "navy",
+    "color": "#101627",
+    "blur_px": 40,
+    "dim": 0.35
+  },
+  "broll": {
+    "style": "frosted-card",
+    "speaker_width_ratio": 0.4,
+    "card_radius_ratio": 0.028,
+    "vertical_radius_px": 30,
+    "vertical_center_x_ratio": 0.7,
+    "vertical_center_y_ratio": 0.51,
+    "vertical_max_h_ratio": 0.62,
+    "vertical_shadow": true,
+    "zoom_to": 1.06,
+    "zoom_kinds": [
+      "photo"
+    ],
+    "transition": "dissolve",
+    "duration": 0.33,
+    "fade": 0.25,
+    "glass_white": 0.7,
+    "blur_px": 40
+  },
+  "cuts": {
+    "silence_threshold": 1.0,
+    "silence_keep": 0.5,
+    "remove_fillers": true
+  },
+  "audio": {
+    "lufs": -14,
+    "tp": -1.0,
+    "lra": 11,
+    "tp_headroom": 0.5
+  },
+  "qc": {
+    "lufs_tolerance": 1.0,
+    "tp_max": -1.0,
+    "tp_tolerance": 0.1,
+    "use_lra": false,
+    "sync_tolerance": 0.04,
+    "sync_window": 5.0,
+    "sync_max_lag": 1.0,
+    "sync_min_score": 0.25
+  },
+  "srt": {
+    "source": "transcript",
+    "max_chars": 40,
+    "min_dur": 0.5,
+    "max_dur": 8.0,
+    "apply_caption_mute": false
+  },
+  "output": {
+    "codec": "libx264",
+    "crf": 18,
+    "preset": "medium",
+    "audio_bitrate": "192k",
+    "final_name": "YouTube_本編_{res}.mp4"
+  }
+}
