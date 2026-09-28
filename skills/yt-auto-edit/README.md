@@ -1,4 +1,4 @@
-# yt-auto-edit（v2）
+# yt-auto-edit（v3）（v2）
 
 撮ったままの動画（人物・画面収録・別録り音声）を Claude Code / Codex に渡すと、字幕・見出し帯・丸ワイプ入りの YouTube 横動画（16:9）と SRT・自動検品結果を作るスキルです。編集ソフトは使いません（ffmpeg + Whisper + Remotion）。
 
@@ -196,3 +196,10 @@ YouTube 動画の編集を頼まれたら、まず `./skills/yt-auto-edit/SKILL.
 | C2 | サムネ | 標準外のみ | `templates/サムネ指示.md`（5 候補を画像生成 AI に頼む指示） |
 | C3 | QC | I/TP/LRA | `--source`/`--plan` で**口元同期ずれ**（|ずれ| > 0.04s 警告）。LRA は合否から除外、TP ≤ -1.0、I = -14±1 |
 | C4 | SKILL.md | — | 60fps 画面収録→30fps、逆さま回転の正規化、処理時間の目安、上記すべての手順化 |
+
+
+## v3 の変更点（2026-09-28）
+- 画面インセット（author プリセット）は下端が H×0.83 を超える場合に縮小して字幕帯と重ねない。
+- 字幕分割: Whisper セグメント末尾の文末表現（「ますよ」等）で話者交代を切る。
+- QC: 試作の尺で末尾が切れたキューは表示時間不足の対象外。
+- 既定値は settings.default.json（version v3）。
